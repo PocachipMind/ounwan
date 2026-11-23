@@ -364,12 +364,21 @@ function rxHtml(key) {
   }).join('')}
     <span class="rxpick" hidden>${EMOJIS.map(e => `<button class="rxb" data-rx="${key}:${e}">${e}</button>`).join('')}</span></div>`;
 }
+// 크게 보기 (아무 데나 누르면 닫힘, 링크 누르면 이동)
+function lightbox(html) {
+  const el = document.createElement('div');
+  el.className = 'lb'; el.setAttribute('role', 'dialog');
+  el.innerHTML = `<div>${html}</div>`;
+  el.onclick = () => el.remove();
+  window.addEventListener('hashchange', () => el.remove(), { once: true });
+  document.body.append(el);
+}
 function bindRx() {
   // 사진/말풍선 꾹 누르기(0.45초) 또는 우클릭 → 이모지 고르기 열기
   const open = key => {
     app.querySelectorAll('.rxpick').forEach(p => p.hidden = true);
     const p = app.querySelector(`.rx[data-key="${key}"] .rxpick`);
-    if (p) { p.hidden = false; navigator.vibrate?.(15); }
+    if (p) { p.hidden = false; navigator.vibrate?.(15); bindRx.lp = Date.now(); }
   };
   // 다른 데 누르면 닫기
   if (!bindRx.outside) {
@@ -419,6 +428,17 @@ function feed() {
   feedMode === 'chat' ? chatView(roomBar() + seg) : logView(roomBar() + seg);
   bindRoomBar(feed);
   bindRx();
+  // 프사 누르면 크게 + 프로필 보기, 사진 짧게 누르면 크게 (꾹 누른 직후 클릭은 무시)
+  app.querySelectorAll('.avbtn').forEach(b => b.onclick = () => {
+    const p = prof(b.dataset.uid);
+    lightbox(`${p?.avatar ? `<img src="${esc(p.avatar)}" alt="${esc(p.nickname)} 프로필 사진" class="lbava">` : ava(p, 'xl')}
+      <p class="lbname">${esc(nick(b.dataset.uid))}</p><a class="tag" href="#u/${b.dataset.uid}">프로필 보기</a>`);
+  });
+  app.querySelectorAll('.ph.proof, .cimg, .snap').forEach(el => el.onclick = e => {
+    if (e.target.closest('button') || Date.now() - (bindRx.lp ?? 0) < 800) return; // ↩ 버튼, 꾹 누른 직후는 무시
+    const img = el.matches('img') ? el : el.querySelector('img');
+    lightbox(`<img src="${esc(img.src)}" alt="${esc(img.alt)}">`);
+  });
   app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { feedMode = b.dataset.mode; store.set('feedMode', feedMode); feed(); });
   app.querySelectorAll('[data-reply]').forEach(b => b.onclick = () => {
     const [id, end] = b.dataset.reply.split(':');
@@ -449,7 +469,7 @@ function chatView(top) {
       const rw = e.m.workout_id && workouts.find(w => w.id === e.m.workout_id);
       inner = `<div class="bub" data-rxkey="c:${e.m.id}">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${esc(rw.kind)} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${e.m.body ? esc(e.m.body) : ''}${e.m.photo ? `<img class="cimg" src="${esc(e.m.photo)}" loading="lazy" alt="보낸 사진">` : ''}</div>${rxHtml(`c:${e.m.id}`)}`;
     }
-    html += `<div class="msg ${mine ? 'mine' : ''}">${mine ? '' : ava(prof(e.uid), 'sm')}
+    html += `<div class="msg ${mine ? 'mine' : ''}">${mine ? '' : `<span class="avbtn" data-uid="${e.uid}" role="button" aria-label="${esc(nick(e.uid))} 프로필">${ava(prof(e.uid), 'sm')}</span>`}
       <div>${mine ? '' : `<p class="who-s">${esc(nick(e.uid))}</p>`}${inner}</div><span class="time">${hhmm(e.t)}</span></div>`;
   }
   html += `</div><form class="chatbar" id="chatForm">
