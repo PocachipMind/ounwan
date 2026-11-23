@@ -359,6 +359,12 @@ function bindRx() {
   }));
 }
 
+// 오운완 인증 사진 표시 (채팅으로 보낸 그냥 사진과 구분)
+const DUMBBELL = `<span class="dumb" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><g fill="#fff">
+  <rect x="1" y="9" width="3" height="6" rx="1"/><rect x="4" y="6" width="3.5" height="12" rx="1.2"/>
+  <rect x="7.5" y="10.75" width="9" height="2.5" rx="1"/>
+  <rect x="16.5" y="6" width="3.5" height="12" rx="1.2"/><rect x="20" y="9" width="3" height="6" rx="1"/></g></svg></span>`;
+
 // 시작/끝 사진 한 장 = 스냅 카드 한 장
 function snap(w, end) {
   const t = end ? (w.ended_at ?? w.created_at) : w.created_at;
@@ -401,7 +407,7 @@ function chatView(top) {
     const mine = e.uid === me.id;
     let inner;
     if (e.w) {
-      inner = `<div class="ph"><img src="${esc(photoOf(e.w, e.end))}" loading="lazy" alt="${esc(e.w.kind)} 사진"><span>${esc(e.w.kind)} ${e.end ? '끝' : '시작'}</span>
+      inner = `<div class="ph proof"><img src="${esc(photoOf(e.w, e.end))}" loading="lazy" alt="${esc(e.w.kind)} 인증 사진">${DUMBBELL}<span>오운완 · ${esc(e.w.kind)} ${e.end ? '끝' : '시작'}</span>
         <button class="rp" data-reply="${e.w.id}:${e.end ? 1 : 0}" aria-label="이 사진에 답장">↩</button></div>${rxBar(e.w, e.end)}`;
     } else {
       const rw = e.m.workout_id && workouts.find(w => w.id === e.m.workout_id);
