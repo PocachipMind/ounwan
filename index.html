@@ -142,8 +142,10 @@ async function upload(file) {
 const pickPhoto = (camera = true) => new Promise(res => {
   const i = Object.assign(document.createElement('input'), { type: 'file', accept: 'image/*' });
   if (camera) i.setAttribute('capture', 'environment');
-  i.onchange = () => res(i.files[0]);
-  i.oncancel = () => res(); // 선택창 취소 시 버튼 잠김 방지
+  // 화면에 붙여둬야 안드로이드에서 선택 후 change가 확실히 옴
+  i.hidden = true; document.body.append(i);
+  i.onchange = () => { res(i.files[0]); i.remove(); };
+  i.oncancel = () => { res(); i.remove(); }; // 선택창 취소 시 버튼 잠김 방지
   i.click();
 });
 
@@ -472,7 +474,8 @@ function mePage() {
   $('#avatar').onclick = act(async () => {
     const f = await pickPhoto(false); if (!f) return;
     toast('올리는 중…');
-    check(await sb.from('profiles').update({ avatar: await upload(f) }).eq('id', me.id));
+    const r = check(await sb.from('profiles').update({ avatar: await upload(f) }).eq('id', me.id).select('id'));
+    if (!r.length) throw new Error('프사 저장 실패. 다시 로그인해봐요');
     await load(); mePage();
   });
   $('#wphoto').onclick = act(async () => {
