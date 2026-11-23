@@ -17,6 +17,7 @@ create table workouts (
   kind text not null check (kind in ('cardio', 'strength')),
   start_photo text not null,
   end_photo text,
+  ended_at timestamptz,
   approved_by uuid references profiles,
   created_at timestamptz not null default now()
 );
@@ -38,7 +39,7 @@ grant delete on workouts to authenticated;
 grant insert (id, nickname) on profiles to authenticated;
 grant update (nickname, target_weight, current_weight, weight_photo, avatar) on profiles to authenticated;
 grant insert (kind, start_photo) on workouts to authenticated;
-grant update (end_photo) on workouts to authenticated;
+grant update (end_photo, ended_at) on workouts to authenticated;
 grant update (fine) on settings to authenticated;
 
 create policy "read" on profiles for select to authenticated using (true);
@@ -53,6 +54,22 @@ create policy "own delete" on workouts for delete to authenticated using (user_i
 create policy "read" on settings for select to authenticated using (true);
 create policy "admin update" on settings for update to authenticated
   using ((select is_admin from profiles where id = auth.uid()));
+
+-- 인증 카드 한마디 댓글
+create table comments (
+  id bigint generated always as identity primary key,
+  workout_id bigint not null references workouts on delete cascade,
+  user_id uuid not null default auth.uid() references profiles on delete cascade,
+  body text not null check (char_length(body) between 1 and 60),
+  created_at timestamptz not null default now()
+);
+alter table comments enable row level security;
+revoke all on comments from authenticated, anon;
+grant select, delete on comments to authenticated;
+grant insert (workout_id, body) on comments to authenticated;
+create policy "read" on comments for select to authenticated using (true);
+create policy "own insert" on comments for insert to authenticated with check (user_id = auth.uid());
+create policy "own delete" on comments for delete to authenticated using (user_id = auth.uid());
 
 -- 승인: 남의 것만, 끝 사진 있어야
 create function approve(wid bigint) returns void
