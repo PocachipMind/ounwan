@@ -68,6 +68,9 @@ const inRoom = (w, r = roomId) => wrs.some(x => x.workout_id === w.id && x.room_
 const roomWs = () => workouts.filter(w => inRoom(w));
 const roomMembers = (r = roomId) => members.filter(m => m.room_id === r);
 const memberIds = () => roomMembers().map(m => m.user_id);
+// 운영자(관리자 계정)는 참가자가 아님: 횟수/벌금/콕 대상에서 빠짐
+const isOp = uid => !!prof(uid)?.is_admin;
+const players = () => memberIds().filter(id => !isOp(id));
 const statsOf = uid => summarize(roomWs().filter(w => w.user_id === uid && w.approved_by),
   roomMembers().find(m => m.user_id === uid)?.joined_at ?? new Date(), room());
 const progress = s => {
@@ -271,13 +274,15 @@ function home() {
   const target = me.target_weight ? +me.target_weight : null;
   const bud = buddy(me.id, rws);
   const toApprove = rws.filter(w => w.user_id !== me.id && w.end_photo && !w.approved_by).length;
-  const friends = memberIds().filter(id => id !== me.id).map(id => ({ id, left: statsOf(id).week.left }));
+  const friends = players().filter(id => id !== me.id).map(id => ({ id, left: statsOf(id).week.left }));
   const poked = id => pokes.some(k => k.from_id === me.id && k.to_id === id && k.day === today());
   const diff = kg.length > 1 ? +(kg.at(-1) - kg[0]).toFixed(1) : 0;
   app.innerHTML = `${roomBar()}<h1 class="who">${ava(me)}${esc(me.nickname)}, 오운완?</h1>
-    <div class="card"><h2>이번 주</h2>
+    ${isOp(me.id) ? `<div class="card"><h2>이번 주</h2><div class="big">운영자 😎</div>
+      <p class="muted">운동 안 해도 돼요. 횟수·벌금 계산에서 빠져 있어요</p></div>`
+    : `<div class="card"><h2>이번 주</h2>
       <div class="big">${s.week.left ? `${s.week.left}회 남았어요` : '완료 🎉'}</div>
-      <p class="muted">${progress(s)} · 쿠폰 ${s.couponsLeft}/${r.coupons}${s.misses ? ` · <span class="warn">벌금 ${won(s.misses * r.fine)}</span>` : ''}</p></div>
+      <p class="muted">${progress(s)} · 쿠폰 ${s.couponsLeft}/${r.coupons}${s.misses ? ` · <span class="warn">벌금 ${won(s.misses * r.fine)}</span>` : ''}</p></div>`}
     <div class="card"><h2>몸무게</h2>${kg.length
       ? `<div class="row"><div><span class="muted">처음</span><b class="jua kg">${kg[0]}kg</b></div><span class="muted">→</span>
          <div><span class="muted">지금</span><b class="jua kg">${kg.at(-1)}kg</b></div>
@@ -559,11 +564,11 @@ function profile(id) {
   app.innerHTML = `<div class="card" style="text-align:center">${ava(p, 'lg')}
       <h1 style="margin:8px 0 4px">${esc(p.nickname)}</h1>
       <p class="muted">${!showW ? '이 방은 몸무게 비공개' : p.current_weight ? `${p.current_weight}kg${p.target_weight ? ` → 목표 ${p.target_weight}kg` : ''}` : '체중 미입력'}</p>
-      <div class="grid3" style="margin-top:12px">
+      ${isOp(id) ? '<p><span class="tag">운영자</span></p>' : `<div class="grid3" style="margin-top:12px">
         <div><b>${s.week.left ? s.week.left + '회' : '완료'}</b><span class="muted">이번 주 남음</span></div>
         <div><b>${done.length}</b><span class="muted">이 방 인증</span></div>
         <div><b class="${s.misses ? 'warn' : ''}">${won(s.misses * r.fine)}</b><span class="muted">벌금</span></div>
-      </div></div>
+      </div>`}</div>
     <h2>인증 기록 · ${esc(r.name)}</h2>
     <div class="tiles">${done.map(w => `<div class="tile"><img src="${esc(w.end_photo)}" loading="lazy" alt="">
       <span>${new Date(w.created_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })} ${esc(w.kind)} ${w.approved_by ? '✓' : ''}</span></div>`).join('')
@@ -572,13 +577,15 @@ function profile(id) {
 
 function membersPage() {
   const r = room();
-  const rows = memberIds().map(id => ({ id, s: statsOf(id) }));
+  const rows = players().map(id => ({ id, s: statsOf(id) }));
   const pot = rows.reduce((a, x) => a + x.s.misses * r.fine, 0);
+  const ops = memberIds().filter(isOp);
   app.innerHTML = `${roomBar()}<h1>멤버</h1>
     <div class="card"><h2>벌금통</h2><div class="big">${won(pot)}</div><p class="muted">미달 1회당 ${won(r.fine)}</p></div>
     ${rows.map(({ id, s }) => `<div class="card"><div class="row">${who(id)}${id === r.owner ? '<span class="tag">방장</span>' : ''}
       <span class="${s.week.left ? '' : 'ok'}">${s.week.left ? `이번 주 ${s.week.left}회 남음` : '이번 주 완료 🎉'}</span></div>
       <p class="muted">${progress(s)} · 쿠폰 ${s.couponsLeft}/${r.coupons} · 벌금 <span class="${s.misses ? 'warn' : ''}">${won(s.misses * r.fine)}</span></p></div>`).join('')}
+    ${ops.map(id => `<div class="card"><div class="row">${who(id)}<span class="tag">운영자</span></div></div>`).join('')}
     ${me.is_admin ? `<div class="card"><h2>관리자: 비밀번호 초기화</h2>
       <select id="resetWho">${profiles.map(p => `<option value="${p.id}">${esc(p.nickname)}</option>`).join('')}</select>
       <input id="resetPw" placeholder="임시 비밀번호 (6자 이상)" autocomplete="off">
