@@ -423,9 +423,10 @@ const photoOf = (w, end) => end ? w.end_photo : w.start_photo;
 let feedMode = store.get('feedMode') || 'log';
 let replyTo = null; // {w, end}
 function feed() {
-  const seg = `<div class="seg"><button class="${feedMode === 'log' ? 'on' : ''}" data-mode="log">로그</button><button class="${feedMode === 'chat' ? 'on' : ''}" data-mode="chat">채팅</button></div>
+  // 방 선택 + 로그/채팅 전환은 화면 위에 고정 (스크롤 어디서든 바로 전환)
+  const top = `<div class="feedtop">${roomBar()}<div class="seg"><button class="${feedMode === 'log' ? 'on' : ''}" data-mode="log">로그</button><button class="${feedMode === 'chat' ? 'on' : ''}" data-mode="chat">채팅</button></div></div>
     <p class="muted" style="text-align:center;margin:0 0 6px">사진이나 메시지를 꾹 누르면 반응 달기</p>`;
-  feedMode === 'chat' ? chatView(roomBar() + seg) : logView(roomBar() + seg);
+  feedMode === 'chat' ? chatView(top) : logView(top);
   bindRoomBar(feed);
   bindRx();
   // 프사 누르면 크게 + 프로필 보기, 사진 짧게 누르면 크게 (꾹 누른 직후 클릭은 무시)
@@ -439,7 +440,10 @@ function feed() {
     const img = el.matches('img') ? el : el.querySelector('img');
     lightbox(`<img src="${esc(img.src)}" alt="${esc(img.alt)}">`);
   });
-  app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { feedMode = b.dataset.mode; store.set('feedMode', feedMode); feed(); });
+  app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+    feedMode = b.dataset.mode; store.set('feedMode', feedMode); feed();
+    if (feedMode === 'log') window.scrollTo(0, 0); // 채팅은 chatView에서 맨 아래로
+  });
   app.querySelectorAll('[data-reply]').forEach(b => b.onclick = () => {
     const [id, end] = b.dataset.reply.split(':');
     replyTo = { w: workouts.find(w => w.id === +id), end: end === '1' };
