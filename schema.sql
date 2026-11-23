@@ -180,3 +180,5 @@ alter publication supabase_realtime add table chat, workouts;
 alter table chat add column workout_id bigint references workouts on delete set null;
 alter table chat add column photo_end boolean;
 grant insert (workout_id, photo_end) on chat to authenticated;
+
+-- 이후 변경은 migrations/ 폴더 순서대로 (002_rooms.sql: 방 기능)
