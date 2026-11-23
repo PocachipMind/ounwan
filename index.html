@@ -111,7 +111,9 @@ main{padding-bottom:170px}
 .rxb{width:auto;padding:4px 9px;border-radius:99px;background:var(--card);border:2px solid var(--line);color:var(--text);box-shadow:none;font-size:15px;font-weight:700;line-height:1.3}
 .rxb.on{background:var(--lav2);border-color:var(--lav)}
 .rxb b{font-size:12px}
-.rxb.add{color:var(--sub);font-size:13px;border-style:dashed}
+/* 꾹 누를 때 폰 기본 메뉴(이미지 저장/텍스트 선택) 안 뜨게 */
+[data-rxkey],[data-rxkey] img{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.rx:not(:has(.rxb:not(.rxpick .rxb))):has(.rxpick[hidden]){padding-top:14px;padding-bottom:0}
 .rxpick{display:inline-flex;gap:4px;padding:2px 6px;background:var(--card);border:2px solid var(--lav);border-radius:99px}
 .rxpick[hidden]{display:none}
 .rxpick .rxb{border:0;padding:2px 5px;background:transparent}

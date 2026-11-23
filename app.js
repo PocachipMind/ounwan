@@ -341,14 +341,32 @@ const rxRows = key => {
 const rxBar = (w, end) => rxHtml(`w:${w.id}:${end ? 1 : 0}`);
 function rxHtml(key) {
   const rs = rxRows(key);
-  return `<div class="rx">${EMOJIS.filter(e => rs.some(r => r.emoji === e)).map(e => {
+  return `<div class="rx" data-key="${key}">${EMOJIS.filter(e => rs.some(r => r.emoji === e)).map(e => {
     const who_ = rs.filter(r => r.emoji === e), mine = who_.some(r => r.user_id === me.id);
     return `<button class="rxb ${mine ? 'on' : ''}" data-rx="${key}:${e}" title="${esc(who_.map(r => nick(r.user_id)).join(', '))}">${e} <b>${who_.length}</b></button>`;
-  }).join('')}<button class="rxb add" data-rxadd aria-label="반응 추가">😀+</button>
+  }).join('')}
     <span class="rxpick" hidden>${EMOJIS.map(e => `<button class="rxb" data-rx="${key}:${e}">${e}</button>`).join('')}</span></div>`;
 }
 function bindRx() {
-  app.querySelectorAll('[data-rxadd]').forEach(b => b.onclick = () => { const p = b.nextElementSibling; p.hidden = !p.hidden; });
+  // 사진/말풍선 꾹 누르기(0.45초) 또는 우클릭 → 이모지 고르기 열기
+  const open = key => {
+    app.querySelectorAll('.rxpick').forEach(p => p.hidden = true);
+    const p = app.querySelector(`.rx[data-key="${key}"] .rxpick`);
+    if (p) { p.hidden = false; navigator.vibrate?.(15); }
+  };
+  // 다른 데 누르면 닫기
+  if (!bindRx.outside) {
+    bindRx.outside = true;
+    document.addEventListener('pointerdown', e => {
+      if (!e.target.closest('.rxpick, [data-rxkey]')) app.querySelectorAll('.rxpick').forEach(p => p.hidden = true);
+    });
+  }
+  app.querySelectorAll('[data-rxkey]').forEach(el => {
+    let t;
+    el.addEventListener('pointerdown', () => { t = setTimeout(() => open(el.dataset.rxkey), 450); });
+    ['pointerup', 'pointerleave', 'pointercancel', 'scroll'].forEach(ev => el.addEventListener(ev, () => clearTimeout(t)));
+    el.addEventListener('contextmenu', e => { e.preventDefault(); open(el.dataset.rxkey); });
+  });
   app.querySelectorAll('[data-rx]').forEach(b => b.onclick = act(async () => {
     const parts = b.dataset.rx.split(':'), emoji = parts.pop(), key = parts.join(':');
     const [t, id, end] = parts;
@@ -368,7 +386,7 @@ const DUMBBELL = `<span class="dumb" aria-hidden="true"><svg viewBox="0 0 24 24"
 // 시작/끝 사진 한 장 = 스냅 카드 한 장
 function snap(w, end) {
   const t = end ? (w.ended_at ?? w.created_at) : w.created_at;
-  return `<article class="snap ${end ? 'r' : 'l'}"><img src="${esc(photoOf(w, end))}" loading="lazy" alt="">
+  return `<article class="snap ${end ? 'r' : 'l'}" data-rxkey="w:${w.id}:${end ? 1 : 0}"><img src="${esc(photoOf(w, end))}" loading="lazy" alt="">
     <div class="ov"><span class="nm">${ava(prof(w.user_id), 'sm')}${esc(nick(w.user_id))}</span>
       <b class="tm">${hhmm(t)}</b><span class="cap">${esc(w.kind)} ${end ? '끝 🔥' : '시작 💪'}</span></div>
     ${!end && !w.end_photo ? '<span class="badge">운동 중…</span>' : ''}
@@ -379,7 +397,8 @@ const photoOf = (w, end) => end ? w.end_photo : w.start_photo;
 let feedMode = store.get('feedMode') || 'log';
 let replyTo = null; // {w, end}
 function feed() {
-  const seg = `<div class="seg"><button class="${feedMode === 'log' ? 'on' : ''}" data-mode="log">로그</button><button class="${feedMode === 'chat' ? 'on' : ''}" data-mode="chat">채팅</button></div>`;
+  const seg = `<div class="seg"><button class="${feedMode === 'log' ? 'on' : ''}" data-mode="log">로그</button><button class="${feedMode === 'chat' ? 'on' : ''}" data-mode="chat">채팅</button></div>
+    <p class="muted" style="text-align:center;margin:0 0 6px">사진이나 메시지를 꾹 누르면 반응 달기</p>`;
   feedMode === 'chat' ? chatView(roomBar() + seg) : logView(roomBar() + seg);
   bindRoomBar(feed);
   bindRx();
@@ -407,11 +426,11 @@ function chatView(top) {
     const mine = e.uid === me.id;
     let inner;
     if (e.w) {
-      inner = `<div class="ph proof"><img src="${esc(photoOf(e.w, e.end))}" loading="lazy" alt="${esc(e.w.kind)} 인증 사진">${DUMBBELL}<span>오운완 · ${esc(e.w.kind)} ${e.end ? '끝' : '시작'}</span>
+      inner = `<div class="ph proof" data-rxkey="w:${e.w.id}:${e.end ? 1 : 0}"><img src="${esc(photoOf(e.w, e.end))}" loading="lazy" alt="${esc(e.w.kind)} 인증 사진">${DUMBBELL}<span>오운완 · ${esc(e.w.kind)} ${e.end ? '끝' : '시작'}</span>
         <button class="rp" data-reply="${e.w.id}:${e.end ? 1 : 0}" aria-label="이 사진에 답장">↩</button></div>${rxBar(e.w, e.end)}`;
     } else {
       const rw = e.m.workout_id && workouts.find(w => w.id === e.m.workout_id);
-      inner = `<div class="bub">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${esc(rw.kind)} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${e.m.body ? esc(e.m.body) : ''}${e.m.photo ? `<img class="cimg" src="${esc(e.m.photo)}" loading="lazy" alt="보낸 사진">` : ''}</div>${rxHtml(`c:${e.m.id}`)}`;
+      inner = `<div class="bub" data-rxkey="c:${e.m.id}">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${esc(rw.kind)} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${e.m.body ? esc(e.m.body) : ''}${e.m.photo ? `<img class="cimg" src="${esc(e.m.photo)}" loading="lazy" alt="보낸 사진">` : ''}</div>${rxHtml(`c:${e.m.id}`)}`;
     }
     html += `<div class="msg ${mine ? 'mine' : ''}">${mine ? '' : ava(prof(e.uid), 'sm')}
       <div>${mine ? '' : `<p class="who-s">${esc(nick(e.uid))}</p>`}${inner}</div><span class="time">${hhmm(e.t)}</span></div>`;
