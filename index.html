@@ -3,105 +3,79 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f2f0eb">
-<meta name="description" content="친구끼리 주 3회 운동 인증">
+<meta name="theme-color" content="#f4efe7">
 <title>오운완</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231c1b19'/%3E%3Crect x='7' y='13' width='18' height='6' rx='1' fill='%23e4572e'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f2f0eb;--paper:#fbfaf7;--ink:#1c1b19;--sub:#77736b;--line:#dcd8cf;
-  --accent:#e4572e;--ok:#3b7d4f;--shadow:rgba(60,48,30,.14);
-  --mono:"IBM Plex Mono",ui-monospace,monospace;
-}
+:root{--bg:#f4efe7;--card:#fffdf9;--line:#e7dfd3;--text:#2d2833;--sub:#8b8394;--lav:#a98bf5;--lav2:#ece4ff;--yel:#ffd76a;--pink:#ff8fab;--mint:#7ad9b5;--warn:#ff6b6b}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;font-family:"IBM Plex Sans KR",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
-main{max-width:460px;margin:0 auto;padding:20px 18px 110px}
-h1{font-size:22px;font-weight:700;letter-spacing:-.03em;margin:4px 0 20px}
-.label{font-size:12px;font-weight:600;color:var(--sub);margin:0 0 6px}
-.muted{color:var(--sub);font-size:13px}
-.ok{color:var(--ok)}.warn{color:var(--accent)}
-.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
-section{padding:18px 0;border-top:1px solid var(--line)}
-section:first-of-type{border-top:0}
-button{font:inherit;font-weight:600;font-size:15px;background:var(--ink);color:var(--paper);border:0;border-radius:10px;padding:14px 16px;width:100%;cursor:pointer;transition:transform .15s,background .2s}
-button:hover{background:#34322e}
-button:active{transform:scale(.98)}
-button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button.accent{background:var(--accent)}
-button.accent:hover{background:#cf4a23}
-button.line{background:transparent;color:var(--ink);border:1px solid var(--line)}
-button.line:hover{background:var(--paper)}
-button.text{background:none;color:var(--sub);padding:8px 0;width:auto;text-decoration:underline;text-underline-offset:3px}
+body{margin:0;font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--bg);color:var(--text)}
+main{max-width:480px;margin:0 auto;padding:16px 16px 100px}
+h1,.big,.tm,.jua{font-family:Jua,system-ui,sans-serif;font-weight:400}
+h1{font-size:26px;margin:8px 0 16px}
+h2{font-size:14px;color:var(--sub);margin:0 0 8px;font-weight:600}
+.card{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px}
+.big{font-size:42px;color:var(--lav);line-height:1.1}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.grid3 b{display:block;font-size:20px;font-family:Jua,sans-serif;font-weight:400}
+button{background:var(--lav);color:#fff;border:0;border-radius:16px;padding:13px 16px;font-weight:700;font-size:15px;width:100%;cursor:pointer;box-shadow:0 3px 0 #8466d9}
+button:active{transform:translateY(2px);box-shadow:none}
+button.ghost{background:var(--card);color:var(--text);border:2px solid var(--line);box-shadow:none}
 button.small{width:auto;padding:8px 12px;font-size:13px}
-button:disabled{opacity:.45}
-input,select{font:inherit;width:100%;padding:12px 13px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:16px;margin-bottom:10px}
-label{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:4px}
-.ava{width:36px;height:36px;border-radius:11px;object-fit:cover;background:#e6e1d7;display:inline-grid;place-items:center;font-weight:700;font-size:15px;flex:none}
-.ava.sm{width:22px;height:22px;border-radius:7px;font-size:11px}
-.ava.lg{width:84px;height:84px;border-radius:24px;font-size:32px}
-.who{display:flex;gap:10px;align-items:center;color:inherit;text-decoration:none;font-weight:600}
-.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
-/* 이번 주 도장판 */
-.left{font-family:var(--mono);font-size:88px;font-weight:600;line-height:.9;letter-spacing:-.04em}
-.left small{font-family:"IBM Plex Sans KR",sans-serif;font-size:17px;font-weight:600;letter-spacing:0;margin-left:6px}
-.stamps{display:grid;grid-template-columns:1fr 1.4fr 1.4fr;gap:6px;margin-top:16px}
-.stamp{border:1.5px dashed #c9c3b7;border-radius:8px;padding:10px 8px;font-size:12px;font-weight:600;color:var(--sub);text-align:center}
-.stamp.on{border:1.5px solid var(--ink);background:var(--ink);color:var(--paper)}
-/* 정보 목록 */
-dl{margin:0}
-dl div{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
-dl div:last-child{border-bottom:0}
-dt{color:var(--sub)}dd{margin:0;font-family:var(--mono);font-weight:600}
-.pics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 12px}
-.pics img,.pics div{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#e6e1d7}
-.pics div{display:grid;place-items:center;color:var(--sub);font-size:13px}
-/* 단체방 타임라인 */
-.day{font-family:var(--mono);font-size:12px;color:var(--sub);margin:28px 0 12px;display:flex;align-items:center;gap:10px}
-.day::after{content:"";flex:1;height:1px;background:var(--line)}
-.snap{position:relative;border-radius:14px;overflow:hidden;border:5px solid var(--paper);box-shadow:0 8px 20px var(--shadow);aspect-ratio:4/3;background:#ddd;margin:0 8px -12px 0;z-index:1}
-.snap.l{transform:rotate(-1.2deg)}.snap.r{transform:rotate(.9deg);margin:0 0 -12px 18px}
+button.yel{background:var(--yel);color:var(--text);box-shadow:0 3px 0 #e0b443}
+button:disabled{opacity:.5}
+input,select{width:100%;padding:12px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--text);font-size:16px;margin-bottom:10px}
+label{display:block;font-size:13px;color:var(--sub);margin-bottom:4px}
+.tag{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--lav2);color:#6d4fd1;font-weight:700}
+.ok{color:#2fae7e}.warn{color:var(--warn)}.muted{color:var(--sub);font-size:13px}
+.ava{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--yel);display:inline-grid;place-items:center;font-weight:700;flex:none;border:2px solid #fff}
+.ava.sm{width:24px;height:24px;font-size:12px}
+.ava.lg{width:92px;height:92px;font-size:34px}
+.who{display:flex;gap:8px;align-items:center;color:inherit;text-decoration:none}
+/* 타임라인 스냅 카드 */
+.day{font-family:Jua,sans-serif;text-align:center;color:var(--sub);margin:22px 0 10px}
+.snap{position:relative;border-radius:22px;overflow:hidden;border:4px solid #fff;box-shadow:0 6px 18px rgba(80,60,40,.12);aspect-ratio:4/3;background:#ddd;margin:0 6px -14px;z-index:1}
+.snap.l{transform:rotate(-1.6deg)}.snap.r{transform:rotate(1.4deg);margin-left:22px}
 .snap img{width:100%;height:100%;object-fit:cover;display:block}
-.ov{position:absolute;inset:0;padding:12px 14px;color:#fff;background:linear-gradient(180deg,rgba(20,18,15,.38),transparent 35%,transparent 55%,rgba(20,18,15,.5));display:flex;flex-direction:column}
-.ov .nm{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:600}
-.ov .tm{font-family:var(--mono);font-size:36px;font-weight:600;margin-top:auto;line-height:1;letter-spacing:-.03em}
-.ov .cap{font-size:13px;font-weight:500;opacity:.9}
-.flag{position:absolute;top:12px;right:12px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:4px}
-.react{background:var(--paper);border-radius:12px;padding:22px 14px 12px;margin:0 2px 6px 10px}
-.react p{margin:5px 0;font-size:14px;line-height:1.5}
+.ov{position:absolute;inset:0;padding:12px;color:#fff;background:linear-gradient(180deg,rgba(0,0,0,.35),transparent 40%,transparent 60%,rgba(0,0,0,.35));display:flex;flex-direction:column}
+.ov .nm{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:700}
+.ov .tm{font-size:38px;margin-top:auto;line-height:1}
+.ov .cap{font-size:14px;font-weight:700}
+.badge{position:absolute;top:10px;right:10px;background:var(--yel);color:var(--text);font-size:12px;font-weight:800;padding:4px 9px;border-radius:99px}
+.react{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:24px 14px 12px;margin:0 4px 8px}
+.react p{margin:6px 0;font-size:14px}
 .react form{display:flex;gap:6px;margin-top:8px}
-.react input{margin:0;padding:9px 11px;font-size:14px}
-.react form button{width:auto;padding:0 14px;font-size:13px}
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.tile{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1}
+.react input{margin:0;padding:9px 12px;font-size:14px}
+.react form button{width:auto;padding:0 14px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:1;border:3px solid #fff;box-shadow:0 3px 10px rgba(80,60,40,.1)}
 .tile img{width:100%;height:100%;object-fit:cover}
-.tile span{position:absolute;left:8px;bottom:6px;color:#fff;font-size:12px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-.tile .num{font-size:11px}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tile span{position:absolute;left:8px;bottom:6px;color:#fff;font-family:Jua,sans-serif;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.pics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+.pics img,.pics div{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;background:var(--lav2)}
+.pics div{display:grid;place-items:center;color:var(--sub);font-size:13px}
+nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:min(448px,calc(100% - 32px));display:flex;background:var(--card);border:2px solid var(--line);border-radius:22px;box-shadow:0 6px 20px rgba(80,60,40,.12);margin-bottom:env(safe-area-inset-bottom)}
 nav[hidden]{display:none}
-nav a{flex:0 1 115px;text-align:center;padding:15px 0 13px;color:var(--sub);text-decoration:none;font-size:13px;font-weight:600;border-top:2px solid transparent;margin-top:-1px;transition:color .2s}
-nav a.on{color:var(--ink);border-top-color:var(--ink)}
-#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:8px;font-size:14px;display:none;max-width:90%;z-index:10}
+nav a{flex:1;text-align:center;padding:12px 0;color:var(--sub);text-decoration:none;font-size:13px;font-weight:700}
+nav a.on{color:var(--lav)}
 /* 공지 */
-.notice{border-left:3px solid var(--accent);padding:2px 0 2px 12px;margin:10px 0}
-.notice b{font-weight:700}.notice .to{color:var(--accent);font-weight:700}
-.notice .body{font-size:16px;font-weight:600;margin:2px 0}
-.composer{display:grid;grid-template-columns:1fr;gap:0;margin-top:12px}
-.pop{position:fixed;inset:0;background:rgba(28,27,25,.72);display:grid;place-items:center;padding:24px;z-index:20}
-.pop div{background:var(--paper);border-radius:14px;padding:26px 22px 18px;max-width:380px;width:100%;border-top:6px solid var(--accent);box-shadow:0 20px 50px rgba(0,0,0,.3)}
-.pop .body{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1.3;margin:8px 0 18px;word-break:keep-all}
-.login{min-height:80dvh;display:flex;flex-direction:column;justify-content:center}
-.login h1{font-size:40px;margin:0}
+.notice{background:var(--lav2);border-radius:16px;padding:10px 14px;margin:8px 0}
+.notice .body{font-size:16px;font-weight:700;margin:2px 0}
+.notice .to{color:#6d4fd1;font-weight:700}
+.pop{position:fixed;inset:0;background:rgba(45,40,51,.55);display:grid;place-items:center;padding:24px;z-index:20}
+.pop>div{background:var(--card);border:2px solid var(--line);border-radius:26px;padding:26px 22px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(45,40,51,.25)}
+.pop .body{font-family:Jua,sans-serif;font-size:30px;line-height:1.25;margin:10px 0 20px;word-break:keep-all}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 14px;border-radius:12px;font-size:14px;display:none;max-width:90%;z-index:9}
 </style>
 </head>
 <body>
-<main id="app"><p class="muted">불러오는 중</p></main>
+<main id="app"><p class="muted">불러오는 중…</p></main>
 <nav id="nav" hidden>
   <a href="#home">홈</a><a href="#feed">단체방</a><a href="#members">멤버</a><a href="#me">내 정보</a>
 </nav>
-<div id="toast" role="status"></div>
+<div id="toast"></div>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/+esm';
 import { summarize, weekStart } from './rules.js';
@@ -117,7 +91,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};
 const won = n => n.toLocaleString('ko-KR') + '원';
 const KIND = { cardio: '유산소', strength: '근력' };
 const hhmm = d => new Date(d).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-const dayLabel = d => new Date(d).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', weekday: 'short' });
+const dayLabel = d => new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 let me, profiles = [], workouts = [], comments = [], notices = [], canNotice = false, fine = 10000;
 
 function toast(t) {
@@ -127,9 +101,9 @@ function toast(t) {
 const prof = id => profiles.find(p => p.id === id);
 const nick = id => prof(id)?.nickname ?? '?';
 const ava = (p, cls = '') => p?.avatar
-  ? `<img class="ava ${cls}" src="${esc(p.avatar)}" alt="${esc(p.nickname)} 프로필">`
-  : `<span class="ava ${cls}" aria-hidden="true">${esc((p?.nickname ?? '?')[0])}</span>`;
-const who = id => `<a class="who" href="#u/${id}">${ava(prof(id))}${esc(nick(id))}</a>`;
+  ? `<img class="ava ${cls}" src="${esc(p.avatar)}" alt="">`
+  : `<span class="ava ${cls}">${esc((p?.nickname ?? '?')[0])}</span>`;
+const who = id => `<a class="who" href="#u/${id}">${ava(prof(id))}<b>${esc(nick(id))}</b></a>`;
 const check = r => { if (r.error) throw r.error; return r.data; };
 // 버튼 액션 공통: 실패하면 토스트
 const act = fn => async e => {
@@ -183,30 +157,29 @@ async function boot() {
   popNotice();
 }
 
-// 나한테 온(또는 전체) 안 본 공지 중 최신 1개를 화면 가득 띄움
+// 안 본 공지 중 최신 1개를 모두에게 화면 가득 띄움 (보낸 사람 제외)
 function popNotice() {
   let seen = 0;
   try { seen = +localStorage.getItem('seenNotice') || 0; } catch {}
-  const n = notices.find(n => n.id > seen && n.user_id !== me.id && (!n.target || n.target === me.id));
+  const n = notices.find(n => n.id > seen && n.user_id !== me.id);
   if (!n) return;
   const el = document.createElement('div');
   el.className = 'pop';
-  el.innerHTML = `<div role="dialog" aria-label="공지"><p class="label">${esc(nick(n.user_id))}${prof(n.user_id)?.is_admin ? ' (관리자)' : ''} → ${n.target ? '너' : '전체'}</p>
-    <p class="body">${esc(n.body)}</p><button>알겠음</button></div>`;
+  el.innerHTML = `<div role="dialog" aria-label="공지"><p class="muted">📢 ${esc(nick(n.user_id))}${prof(n.user_id)?.is_admin ? ' (관리자)' : ''} → ${n.target ? (n.target === me.id ? '너' : esc(nick(n.target))) : '전체'}</p>
+    <p class="body">${esc(n.body)}</p><button>알겠어요…</button></div>`;
   el.querySelector('button').onclick = () => { try { localStorage.setItem('seenNotice', notices[0].id); } catch {} el.remove(); };
   document.body.append(el);
 }
 
 function noticeSection() {
-  const recent = notices.slice(0, 5);
-  return `<section><p class="label">공지</p>
-    ${recent.map(n => `<div class="notice"><span class="muted">${esc(nick(n.user_id))} → <span class="to">${n.target ? esc(nick(n.target)) : '전체'}</span> · <span class="num">${hhmm(n.created_at)}</span></span>
+  return `<div class="card"><h2>📢 공지</h2>
+    ${notices.slice(0, 5).map(n => `<div class="notice"><span class="muted">${esc(nick(n.user_id))} → <span class="to">${n.target ? esc(nick(n.target)) : '전체'}</span> · ${hhmm(n.created_at)}</span>
       <p class="body">${esc(n.body)}</p></div>`).join('') || '<p class="muted">이번 주 공지 없음</p>'}
-    ${canNotice ? `<form class="composer" id="noticeForm">
+    ${canNotice ? `<form id="noticeForm" style="margin-top:10px">
         <select id="nTarget" aria-label="받는 사람"><option value="">전체</option>${profiles.filter(p => p.id !== me.id).map(p => `<option value="${p.id}">${esc(p.nickname)}</option>`).join('')}</select>
         <input id="nBody" maxlength="80" placeholder="예: 에몽가 돼지 공부좀 해라 ㅋㅋ" required>
-        <button class="line">공지 띄우기</button></form>`
-      : '<p class="muted">지난주 3회 채운 사람만 공지 쓸 수 있음.</p>'}</section>`;
+        <button class="ghost">공지 띄우기</button></form>`
+      : '<p class="muted">지난주 3회 채운 사람만 공지 쓸 수 있어요.</p>'}</div>`;
 }
 function bindNotice(rerender) {
   const f = $('#noticeForm'); if (!f) return;
@@ -214,37 +187,37 @@ function bindNotice(rerender) {
     e.preventDefault();
     act(async () => {
       check(await sb.from('notices').insert({ target: $('#nTarget').value || null, body: $('#nBody').value.trim() }));
-      await load(); rerender(); toast('띄움');
+      await load(); rerender(); toast('공지 띄웠어요');
     })({ currentTarget: f.querySelector('button') });
   };
 }
 
 function loginView() {
   $('#nav').hidden = true;
-  app.innerHTML = `<div class="login"><h1>오운완</h1>
-    <p class="muted" style="margin:6px 0 28px">주 3회. 못 하면 만원.</p>
-    <form id="loginForm">
+  app.innerHTML = `<h1 style="text-align:center;font-size:44px;margin-top:40px">오운완 💪</h1>
+    <p class="muted" style="text-align:center;margin-top:-8px">주 3회, 같이 운동하자</p>
+    <form class="card" id="loginForm">
     <input id="email" type="email" placeholder="이메일" autocomplete="email" required>
-    <input id="pw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" required minlength="6">
-    <button id="login">로그인</button>
-    <button type="button" class="line" id="signup" style="margin-top:8px">처음이면 가입하기</button>
-    <p class="muted" style="margin-top:18px">비밀번호를 잊었으면 관리자한테 말하면 임시 비밀번호로 바꿔줌.</p></form></div>`;
+    <input id="pw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" required>
+    <button id="login">로그인</button><p></p>
+    <button type="button" class="ghost" id="signup">회원가입</button>
+    <p class="muted" style="text-align:center">비밀번호를 잊었으면 관리자에게 말해주세요. 임시 비밀번호로 바꿔줘요.</p></form>`;
   const cred = () => ({ email: $('#email').value.trim(), password: $('#pw').value });
   const login = act(async () => { check(await sb.auth.signInWithPassword(cred())); await boot(); });
   $('#loginForm').onsubmit = e => { e.preventDefault(); login({ currentTarget: $('#login') }); };
   $('#signup').onclick = act(async () => {
     const r = check(await sb.auth.signUp(cred()));
-    if (!r.session) throw new Error('Supabase에서 이메일 인증(Confirm email)을 꺼야 함');
+    if (!r.session) throw new Error('Supabase에서 이메일 인증(Confirm email)을 꺼주세요');
     await boot();
   });
 }
 
 function nicknameView() {
-  app.innerHTML = `<h1>닉네임</h1><p class="muted">단체방에 보일 이름</p>
-    <input id="nick" placeholder="예: 몽글" maxlength="12"><button id="save">시작</button>`;
+  app.innerHTML = `<h1>닉네임 정하기</h1><div class="card">
+    <input id="nick" placeholder="닉네임" maxlength="12"><button id="save">시작하기</button></div>`;
   $('#save').onclick = act(async () => {
     const nickname = $('#nick').value.trim();
-    if (!nickname) throw new Error('닉네임을 입력해줘');
+    if (!nickname) throw new Error('닉네임을 입력해주세요');
     check(await sb.from('profiles').insert({ id: me.id, nickname }));
     await boot();
   });
@@ -258,12 +231,6 @@ function route() {
 }
 window.onhashchange = route;
 
-// 유산소 1칸 + 근력 2칸 도장판
-const stamps = w => `<div class="stamps">
-  <div class="stamp ${w.cardio >= 1 ? 'on' : ''}">유산소</div>
-  <div class="stamp ${w.strength >= 1 ? 'on' : ''}">근력 1</div>
-  <div class="stamp ${w.strength >= 2 ? 'on' : ''}">근력 2</div></div>`;
-
 function home() {
   const s = statsOf(me);
   const thisWeek = weekStart(new Date());
@@ -271,32 +238,29 @@ function home() {
   const ongoing = mine.find(w => !w.end_photo);
   const pending = mine.filter(w => w.end_photo && !w.approved_by).length;
   const toApprove = workouts.filter(w => w.user_id !== me.id && w.end_photo && !w.approved_by).length;
-  app.innerHTML = `<div class="row" style="margin-bottom:18px">${who(me.id)}<span class="muted num">${dayLabel(new Date())}</span></div>
-    <section><p class="label">이번 주 남은 횟수</p>
-      <div class="left">${s.week.left}<small>${s.week.left ? '회' : '회 · 이번 주 끝'}</small></div>
-      ${stamps(s.week)}
-      ${pending ? `<p class="muted" style="margin:12px 0 0">확인 대기 ${pending}건. 친구가 확인해야 도장 찍힘.</p>` : ''}</section>
-    <section>${ongoing
-      ? `<p class="label">운동 중 · ${KIND[ongoing.kind]} · <span class="num">${hhmm(ongoing.created_at)}</span> 시작</p>
-         <div class="pics"><img src="${esc(ongoing.start_photo)}" alt="시작 사진"><div>끝 사진</div></div>
-         <button class="accent" id="finish">끝 사진 찍기</button>
-         <button class="text" id="cancel">이번 운동 취소</button>`
-      : `<p class="label">운동 시작</p>
-         <select id="kind" aria-label="운동 종류"><option value="strength">근력</option><option value="cardio">유산소</option></select>
-         <button class="accent" id="start">시작 사진 찍기</button>`}</section>
-    <section><dl>
-      <div><dt>남은 쿠폰 (이번 분기)</dt><dd>${s.couponsLeft} / 3</dd></div>
-      <div><dt>내 벌금</dt><dd class="${s.misses ? 'warn' : ''}">${won(s.misses * fine)}</dd></div>
-      <div><dt>내가 확인해줄 인증</dt><dd>${toApprove}건</dd></div></dl>
-      ${toApprove ? `<button class="line" style="margin-top:12px" onclick="location.hash='feed'">단체방에서 확인하기</button>` : ''}</section>
+  app.innerHTML = `<h1 class="who">${ava(me)}${esc(me.nickname)}, 오운완?</h1>
+    <div class="card"><h2>이번 주</h2>
+      <div class="big">${s.week.left ? `${s.week.left}회 남았어요` : '완료 🎉'}</div>
+      <p class="muted">유산소 ${s.week.cardio}/1 · 근력 ${s.week.strength}/2${pending ? ` · 확인 대기 ${pending}` : ''}</p></div>
+    <div class="card">${ongoing
+      ? `<h2>운동 중 (${KIND[ongoing.kind]}) · ${hhmm(ongoing.created_at)} 시작</h2><div class="pics"><img src="${esc(ongoing.start_photo)}"><div>끝 사진</div></div>
+         <button id="finish">운동 끝 사진 찍기 📸</button><p></p><button class="ghost small" id="cancel">취소</button>`
+      : `<h2>운동 시작</h2><select id="kind"><option value="strength">근력</option><option value="cardio">유산소</option></select>
+         <button id="start">시작 사진 찍기 📸</button>`}</div>
+    <div class="grid3 card">
+      <div><b>${s.couponsLeft}/3</b><span class="muted">분기 쿠폰</span></div>
+      <div><b class="${s.misses ? 'warn' : ''}">${won(s.misses * fine)}</b><span class="muted">내 벌금</span></div>
+      <div><b>${toApprove}</b><span class="muted">확인 요청</span></div>
+    </div>
+    ${toApprove ? `<button class="yel" onclick="location.hash='feed'">친구 인증 확인하러 가기 👀</button><p></p>` : ''}
     ${noticeSection()}`;
   bindNotice(home);
   if (ongoing) {
     $('#finish').onclick = act(async () => {
       const f = await pickPhoto(); if (!f) return;
-      toast('올리는 중');
+      toast('올리는 중…');
       check(await sb.from('workouts').update({ end_photo: await upload(f), ended_at: new Date().toISOString() }).eq('id', ongoing.id));
-      toast('올림. 친구 확인 기다리는 중'); await load(); home();
+      toast('인증 완료! 친구 확인 기다리는 중'); await load(); home();
     });
     $('#cancel').onclick = act(async () => {
       check(await sb.from('workouts').delete().eq('id', ongoing.id)); await load(); home();
@@ -304,9 +268,9 @@ function home() {
   } else {
     $('#start').onclick = act(async () => {
       const kind = $('#kind').value, f = await pickPhoto(); if (!f) return;
-      toast('올리는 중');
+      toast('올리는 중…');
       check(await sb.from('workouts').insert({ kind, start_photo: await upload(f) }));
-      toast('시작함. 끝나면 끝 사진'); await load(); home();
+      toast('화이팅! 끝나면 끝 사진 찍기'); await load(); home();
     });
   }
 }
@@ -314,20 +278,20 @@ function home() {
 // 시작/끝 사진 한 장 = 스냅 카드 한 장
 function snap(w, end) {
   const t = end ? (w.ended_at ?? w.created_at) : w.created_at;
-  return `<article class="snap ${end ? 'r' : 'l'}"><img src="${esc(end ? w.end_photo : w.start_photo)}" loading="lazy" alt="${esc(nick(w.user_id))} ${KIND[w.kind]} ${end ? '끝' : '시작'} 사진">
+  return `<article class="snap ${end ? 'r' : 'l'}"><img src="${esc(end ? w.end_photo : w.start_photo)}" loading="lazy" alt="">
     <div class="ov"><span class="nm">${ava(prof(w.user_id), 'sm')}${esc(nick(w.user_id))}</span>
-      <b class="tm">${hhmm(t)}</b><span class="cap">${KIND[w.kind]} ${end ? '끝' : '시작'}</span></div>
-    ${!end && !w.end_photo ? '<span class="flag">운동 중</span>' : ''}</article>`;
+      <b class="tm">${hhmm(t)}</b><span class="cap">${KIND[w.kind]} ${end ? '끝 🔥' : '시작 💪'}</span></div>
+    ${!end && !w.end_photo ? '<span class="badge">운동 중…</span>' : ''}</article>`;
 }
-// 끝 카드 아래: 확인 + 한마디
+// 끝 카드 아래: 확인(👍) + 한마디
 function reactBox(w) {
   const cs = comments.filter(c => c.workout_id === w.id);
   return `<div class="react">
-    ${w.approved_by ? `<p class="ok"><b>${esc(nick(w.approved_by))}</b> 확인함</p>`
-      : w.user_id === me.id ? `<p class="muted">친구 확인 기다리는 중</p>`
-      : `<button class="accent small" data-ok="${w.id}">확인해주기</button>`}
+    ${w.approved_by ? `<p class="ok"><b>👍 ${esc(nick(w.approved_by))} 확인 완료</b></p>`
+      : w.user_id === me.id ? `<p class="muted">친구 확인 기다리는 중…</p>`
+      : `<button class="yel small" data-ok="${w.id}">👍 확인해주기</button>`}
     ${cs.map(c => `<p><b>${esc(nick(c.user_id))}</b> ${esc(c.body)}</p>`).join('')}
-    <form data-cmt="${w.id}"><input maxlength="60" placeholder="한마디" aria-label="한마디" required><button>보내기</button></form></div>`;
+    <form data-cmt="${w.id}"><input maxlength="60" placeholder="한마디 남기기" required><button>↑</button></form></div>`;
 }
 
 function feed() {
@@ -340,9 +304,9 @@ function feed() {
   for (const e of ev) {
     const d = dayLabel(e.t);
     if (d !== lastDay) { html += `<div class="day">${d}</div>`; lastDay = d; }
-    html += snap(e.w, e.end) + (e.end ? reactBox(e.w) : '<div style="height:20px"></div>');
+    html += snap(e.w, e.end) + (e.end ? reactBox(e.w) : '<div style="height:22px"></div>');
   }
-  app.innerHTML = ev.length ? html : html + '<p class="muted">아직 아무도 안 올림. 홈에서 시작 사진 찍으면 여기 뜸.</p>';
+  app.innerHTML = ev.length ? html : html + '<p class="muted">아직 인증이 없어요. 첫 오운완 올려봐요!</p>';
   bindReact(feed);
 }
 function bindReact(rerender) {
@@ -363,32 +327,33 @@ function profile(id) {
   if (!p) return home();
   const s = statsOf(p);
   const done = workouts.filter(w => w.user_id === id && w.end_photo);
-  app.innerHTML = `<button class="text" onclick="history.back()">← 뒤로</button>
-    <section style="display:flex;gap:16px;align-items:center">${ava(p, 'lg')}
-      <div><h1 style="margin:0 0 4px">${esc(p.nickname)}</h1>
-      <p class="muted num" style="margin:0">${p.current_weight ? `${p.current_weight}kg${p.target_weight ? ` → ${p.target_weight}kg` : ''}` : '체중 미입력'}</p></div></section>
-    <section><p class="label">이번 주</p>${stamps(s.week)}
-      <dl style="margin-top:10px"><div><dt>총 인증</dt><dd>${done.length}회</dd></div>
-      <div><dt>벌금</dt><dd class="${s.misses ? 'warn' : ''}">${won(s.misses * fine)}</dd></div></dl></section>
-    <section><p class="label">기록</p>
-    <div class="tiles">${done.map(w => `<div class="tile"><img src="${esc(w.end_photo)}" loading="lazy" alt="${KIND[w.kind]} 인증 사진">
-      <span><span class="num">${new Date(w.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}</span> ${KIND[w.kind]}${w.approved_by ? ' · 확인됨' : ''}</span></div>`).join('')
-      || '<p class="muted">아직 기록 없음</p>'}</div></section>`;
+  app.innerHTML = `<div class="card" style="text-align:center">${ava(p, 'lg')}
+      <h1 style="margin:8px 0 4px">${esc(p.nickname)}</h1>
+      <p class="muted">${p.current_weight ? `${p.current_weight}kg${p.target_weight ? ` → 목표 ${p.target_weight}kg` : ''}` : '체중 미입력'}</p>
+      <div class="grid3" style="margin-top:12px">
+        <div><b>${s.week.left ? s.week.left + '회' : '완료'}</b><span class="muted">이번 주 남음</span></div>
+        <div><b>${done.length}</b><span class="muted">총 인증</span></div>
+        <div><b class="${s.misses ? 'warn' : ''}">${won(s.misses * fine)}</b><span class="muted">벌금</span></div>
+      </div></div>
+    <h2>인증 기록</h2>
+    <div class="tiles">${done.map(w => `<div class="tile"><img src="${esc(w.end_photo)}" loading="lazy" alt="">
+      <span>${new Date(w.created_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })} ${KIND[w.kind]} ${w.approved_by ? '✓' : ''}</span></div>`).join('')
+      || '<p class="muted">아직 기록이 없어요</p>'}</div>`;
 }
 
 function members() {
   const rows = profiles.map(p => ({ p, s: statsOf(p) }));
   const pot = rows.reduce((a, r) => a + r.s.misses * fine, 0);
   app.innerHTML = `<h1>멤버</h1>
-    <section><p class="label">벌금통</p><div class="left" style="font-size:52px">${pot.toLocaleString('ko-KR')}<small>원</small></div>
-      <p class="muted">미달 1회당 ${won(fine)}</p></section>
-    <section>${rows.map(({ p, s }) => `<div class="row" style="padding:10px 0">${who(p.id)}
-      <span class="num ${s.week.left ? '' : 'ok'}" style="font-size:14px">${s.week.left ? `${s.week.left}회 남음` : '이번 주 끝'}${s.misses ? ` · <span class="warn">${won(s.misses * fine)}</span>` : ''}</span></div>`).join('')}</section>
-    ${me.is_admin ? `<section><p class="label">관리자 · 벌금 금액</p><input id="fine" type="number" step="1000" value="${fine}"><button class="line" id="saveFine">저장</button></section>
-    <section><p class="label">관리자 · 비밀번호 초기화</p>
+    <div class="card"><h2>벌금통</h2><div class="big">${won(pot)}</div><p class="muted">미달 1회당 ${won(fine)}</p></div>
+    ${rows.map(({ p, s }) => `<div class="card"><div class="row">${who(p.id)}
+      <span class="${s.week.left ? '' : 'ok'}">${s.week.left ? `이번 주 ${s.week.left}회 남음` : '이번 주 완료 🎉'}</span></div>
+      <p class="muted">유산소 ${s.week.cardio}/1 · 근력 ${s.week.strength}/2 · 쿠폰 ${s.couponsLeft}/3 · 벌금 <span class="${s.misses ? 'warn' : ''}">${won(s.misses * fine)}</span></p></div>`).join('')}
+    ${me.is_admin ? `<div class="card"><h2>관리자: 벌금 금액</h2><input id="fine" type="number" step="1000" value="${fine}"><button id="saveFine">저장</button></div>
+    <div class="card"><h2>관리자: 비밀번호 초기화</h2>
       <select id="resetWho">${profiles.map(p => `<option value="${p.id}">${esc(p.nickname)}</option>`).join('')}</select>
       <input id="resetPw" placeholder="임시 비밀번호 (6자 이상)" autocomplete="off">
-      <button class="line" id="resetBtn">초기화</button></section>` : ''}`;
+      <button id="resetBtn">초기화</button></div>` : ''}`;
   if (me.is_admin) {
     $('#saveFine').onclick = act(async () => {
       check(await sb.from('settings').update({ fine: +$('#fine').value }).eq('id', 1));
@@ -396,38 +361,37 @@ function members() {
     });
     $('#resetBtn').onclick = act(async () => {
       check(await sb.rpc('admin_reset_password', { uid: $('#resetWho').value, pw: $('#resetPw').value }));
-      $('#resetPw').value = ''; toast('바꿈. 임시 비밀번호 알려주면 됨');
+      $('#resetPw').value = ''; toast('바꿨어요. 임시 비밀번호 알려주세요');
     });
   }
 }
 
 function mePage() {
-  app.innerHTML = `<h1>내 정보</h1>
-    <section style="display:flex;gap:16px;align-items:center">${ava(me, 'lg')}
-      <div><button class="line small" id="avatar">사진 바꾸기</button>
-      <a class="muted" href="#u/${me.id}" style="display:block;margin-top:10px">내 기록 보기 →</a></div></section>
-    <section>
-    <label for="nick">닉네임</label><input id="nick" value="${esc(me.nickname)}" maxlength="12">
-    <label for="tw">목표 체중 (kg)</label><input id="tw" type="number" step="0.1" value="${me.target_weight ?? ''}">
-    <label for="cw">현재 체중 (kg)</label><input id="cw" type="number" step="0.1" value="${me.current_weight ?? ''}">
+  app.innerHTML = `<h1>내 정보</h1><div class="card">
+    <div style="text-align:center;margin-bottom:12px">${ava(me, 'lg')}<p></p>
+      <button class="ghost small" id="avatar">프로필 사진 바꾸기</button>
+      <a class="muted" href="#u/${me.id}" style="display:block;margin-top:10px">내 인증 기록 보기 →</a></div>
+    <label>닉네임</label><input id="nick" value="${esc(me.nickname)}" maxlength="12">
+    <label>목표 체중 (kg)</label><input id="tw" type="number" step="0.1" value="${me.target_weight ?? ''}">
+    <label>현재 체중 (kg)</label><input id="cw" type="number" step="0.1" value="${me.current_weight ?? ''}">
     <label>체중계 사진</label>
-    ${me.weight_photo ? `<img src="${esc(me.weight_photo)}" alt="체중계 사진" style="width:100%;border-radius:8px;margin-bottom:10px">` : ''}
-    <button class="line" id="wphoto">체중계 사진 찍기</button>
-    <button id="save" style="margin-top:8px">저장</button></section>
-    <section><label for="newPw">비밀번호 변경</label>
+    ${me.weight_photo ? `<img src="${esc(me.weight_photo)}" style="width:100%;border-radius:14px;margin-bottom:10px">` : ''}
+    <button class="ghost" id="wphoto">체중계 사진 찍기</button><p></p>
+    <button id="save">저장</button></div>
+    <div class="card"><h2>비밀번호 변경</h2>
       <input id="newPw" type="password" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
-      <button class="line" id="changePw">변경</button></section>
-    <section><button class="text" id="logout">로그아웃</button></section>`;
+      <button class="ghost" id="changePw">변경</button></div>
+    <button class="ghost" id="logout">로그아웃</button>`;
   const num = v => v === '' ? null : +v;
   $('#avatar').onclick = act(async () => {
     const f = await pickPhoto(false); if (!f) return;
-    toast('올리는 중');
+    toast('올리는 중…');
     check(await sb.from('profiles').update({ avatar: await upload(f) }).eq('id', me.id));
     await load(); mePage();
   });
   $('#wphoto').onclick = act(async () => {
     const f = await pickPhoto(); if (!f) return;
-    toast('올리는 중');
+    toast('올리는 중…');
     check(await sb.from('profiles').update({ weight_photo: await upload(f) }).eq('id', me.id));
     await load(); mePage();
   });
@@ -442,7 +406,7 @@ function mePage() {
   $('#logout').onclick = act(async () => { await sb.auth.signOut(); boot(); });
 }
 
-boot().catch(e => { app.innerHTML = `<p class="warn">${esc(e.message)}</p><p class="muted">연결 실패. 새로고침 해보고 계속 안 되면 관리자한테 말해줘.</p>`; });
+boot().catch(e => { app.innerHTML = `<p class="warn">${esc(e.message)}</p><p class="muted">Supabase 설정(SUPABASE_URL/KEY, schema.sql) 확인</p>`; });
 </script>
 </body>
 </html>
