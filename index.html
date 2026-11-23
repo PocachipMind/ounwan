@@ -375,7 +375,8 @@ function snap(w, end) {
 function reactBox(w) {
   const cs = comments.filter(c => c.workout_id === w.id);
   return `<div class="react">
-    ${w.approved_by ? `<p class="ok"><b>👍 ${esc(nick(w.approved_by))} 확인 완료</b></p>`
+    ${!w.end_photo ? `<p class="muted">운동 중… 끝 사진 올라오면 확인 가능</p>`
+      : w.approved_by ? `<p class="ok"><b>👍 ${esc(nick(w.approved_by))} 확인 완료</b></p>`
       : w.user_id === me.id ? `<p class="muted">친구 확인 기다리는 중…</p>`
       : `<button class="yel small" data-ok="${w.id}">👍 확인해주기</button>`}
     ${cs.map(c => `<p><b>${esc(nick(c.user_id))}</b> ${esc(c.body)}</p>`).join('')}
@@ -392,7 +393,8 @@ function feed() {
   for (const e of ev) {
     const d = dayLabel(e.t);
     if (d !== lastDay) { html += `<div class="day">${d}</div>`; lastDay = d; }
-    html += snap(e.w, e.end) + (e.end ? reactBox(e.w) : '<div style="height:22px"></div>');
+    // 끝 카드 밑에 반응, 아직 운동 중이면 시작 카드 밑에
+    html += snap(e.w, e.end) + (e.end || !e.w.end_photo ? reactBox(e.w) : '<div style="height:22px"></div>');
   }
   app.innerHTML = ev.length ? html : html + '<p class="muted">아직 인증이 없어요. 첫 오운완 올려봐요!</p>';
   bindReact(feed);
