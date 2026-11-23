@@ -164,7 +164,7 @@ function noticeSection() {
       <p class="body">${esc(n.body)}</p>${n.user_id === me.id ? `<button class="x" data-del="${n.id}" aria-label="지우기">✕</button>` : ''}</div>`).join('') || '<p class="muted">이번 주 조용하네</p>'}
     ${canNotice ? `<form id="noticeForm" style="margin-top:10px">
         <select id="nTarget" aria-label="받는 사람"><option value="">전체</option>${memberIds().filter(id => id !== me.id).map(id => `<option value="${id}">${esc(nick(id))}</option>`).join('')}</select>
-        <input id="nBody" maxlength="80" placeholder="예: 에몽가 돼지 공부좀 해라 ㅋㅋ" required>
+        <input id="nBody" maxlength="80" placeholder="예: XX야 운동좀 해라 ㅋㅋ" required>
         <button class="ghost">😈</button></form>`
       : '<p class="muted">지난주 이 방 규칙 채운 사람만 쓸 수 있어요. 억울하면 운동하기</p>'}</div>`;
 }
