@@ -160,3 +160,23 @@ grant select on pokes to authenticated;
 grant insert (to_id) on pokes to authenticated;
 create policy "read" on pokes for select to authenticated using (true);
 create policy "own insert" on pokes for insert to authenticated with check (from_id = auth.uid());
+
+-- 단체 채팅 (운동 사진은 workouts에서 자동으로 섞어 보여줌)
+create table chat (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references profiles on delete cascade,
+  body text not null check (char_length(body) between 1 and 300),
+  created_at timestamptz not null default now()
+);
+alter table chat enable row level security;
+revoke all on chat from authenticated, anon;
+grant select on chat to authenticated;
+grant insert (body) on chat to authenticated;
+create policy "read" on chat for select to authenticated using (true);
+create policy "own insert" on chat for insert to authenticated with check (user_id = auth.uid());
+-- 실시간 반영
+alter publication supabase_realtime add table chat, workouts;
+-- 사진 답장: 어느 운동 사진(시작/끝)에 단 말인지
+alter table chat add column workout_id bigint references workouts on delete set null;
+alter table chat add column photo_end boolean;
+grant insert (workout_id, photo_end) on chat to authenticated;

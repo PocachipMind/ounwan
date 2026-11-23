@@ -82,6 +82,30 @@ nav a.on{color:var(--lav)}
 .cta{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom));width:min(448px,calc(100% - 32px));text-align:center;font-family:Jua,sans-serif;font-size:24px;padding:16px;border-radius:20px;background:var(--lav);color:#fff;text-decoration:none;box-shadow:0 5px 0 #8466d9,0 12px 26px rgba(120,90,200,.3);z-index:5}
 .cta:active{transform:translate(-50%,3px);box-shadow:0 2px 0 #8466d9}
 main{padding-bottom:170px}
+/* 단체방 로그/채팅 */
+.seg{display:flex;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:4px;margin-bottom:8px}
+.seg button{background:transparent;color:var(--sub);box-shadow:none;padding:9px}
+.seg button.on{background:var(--lav);color:#fff}
+.rp{position:absolute;right:10px;bottom:10px;width:34px;height:34px;padding:0;border-radius:50%;background:rgba(255,255,255,.85);color:var(--text);box-shadow:none;font-size:16px}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{display:flex;gap:8px;align-items:flex-end;max-width:88%}
+.msg.mine{align-self:flex-end;flex-direction:row-reverse}
+.who-s{font-size:12px;color:var(--sub);margin:0 0 3px;font-weight:700}
+.time{font-size:11px;color:var(--sub);flex:none}
+.bub{background:var(--card);border:2px solid var(--line);border-radius:18px 18px 18px 6px;padding:9px 13px;font-size:15px;line-height:1.45;word-break:break-word}
+.mine .bub{background:var(--lav);border-color:var(--lav);color:#fff;border-radius:18px 18px 6px 18px}
+.ph{position:relative;width:min(230px,60vw);border-radius:16px;overflow:hidden;border:3px solid #fff;box-shadow:0 4px 12px rgba(80,60,40,.12)}
+.ph img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.ph span{position:absolute;left:9px;bottom:7px;color:#fff;font-family:Jua,sans-serif;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.ph .rp{width:30px;height:30px;right:7px;bottom:7px;font-size:14px}
+.quote{display:flex;gap:8px;align-items:center;font-size:12px;opacity:.85;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(127,127,127,.3)}
+.quote img{width:40px;height:30px;object-fit:cover;border-radius:6px}
+.chatbar{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(448px,calc(100% - 32px));background:var(--card);border:2px solid var(--line);border-radius:20px;padding:6px;z-index:5;box-shadow:0 6px 20px rgba(80,60,40,.12)}
+.chatbar input{margin:0;border:0;background:transparent}
+.chatbar .row>button{width:44px;height:40px;padding:0;flex:none;border-radius:14px}
+.replying{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--sub);padding:4px 6px 8px;position:relative}
+.replying img{width:36px;height:27px;object-fit:cover;border-radius:6px}
+.replying .x{position:absolute;right:2px;top:0;width:26px;height:26px;padding:0;background:transparent;color:var(--sub);box-shadow:none}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 14px;border-radius:12px;font-size:14px;display:none;max-width:90%;z-index:9}
 </style>
 </head>
@@ -107,7 +131,7 @@ const won = n => n.toLocaleString('ko-KR') + '원';
 const KIND = { cardio: '유산소', strength: '근력' };
 const hhmm = d => new Date(d).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 const dayLabel = d => new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
-let me, profiles = [], workouts = [], comments = [], notices = [], weights = [], pokes = [], canNotice = false, fine = 10000;
+let me, profiles = [], workouts = [], comments = [], notices = [], weights = [], pokes = [], chatMsgs = [], canNotice = false, fine = 10000;
 const today = () => new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD (로컬)
 
 function toast(t) {
@@ -151,7 +175,7 @@ const pickPhoto = (camera = true) => new Promise(res => {
 
 async function load() {
   const week = new Date(Date.now() - 7 * 864e5).toISOString();
-  const [p, w, c, s, n, cn, wt, pk] = await Promise.all([
+  const [p, w, c, s, n, cn, wt, pk, ch] = await Promise.all([
     sb.from('profiles').select('*'),
     sb.from('workouts').select('*').order('created_at', { ascending: false }),
     sb.from('comments').select('*').order('created_at'),
@@ -160,7 +184,9 @@ async function load() {
     sb.rpc('can_notice'),
     sb.from('weights').select('*').order('created_at'),
     sb.from('pokes').select('*').gte('created_at', new Date(Date.now() - 2 * 864e5).toISOString()).order('created_at', { ascending: false }),
+    sb.from('chat').select('*').order('created_at', { ascending: false }).limit(200), // ponytail: 최근 200개만
   ]);
+  chatMsgs = check(ch).reverse();
   profiles = check(p); workouts = check(w); comments = check(c); fine = check(s).fine;
   notices = check(n); canNotice = check(cn); weights = check(wt); pokes = check(pk);
   me = profiles.find(x => x.id === me.id) ?? { id: me.id };
@@ -176,6 +202,7 @@ async function boot() {
   $('#nav').hidden = false;
   route();
   popNotice();
+  if (!boot.live) { boot.live = true; subscribeLive(); }
 }
 
 const seenGet = k => { try { return +localStorage.getItem(k) || 0; } catch { return 0; } };
@@ -369,7 +396,83 @@ function snap(w, end) {
   return `<article class="snap ${end ? 'r' : 'l'}"><img src="${esc(end ? w.end_photo : w.start_photo)}" loading="lazy" alt="">
     <div class="ov"><span class="nm">${ava(prof(w.user_id), 'sm')}${esc(nick(w.user_id))}</span>
       <b class="tm">${hhmm(t)}</b><span class="cap">${KIND[w.kind]} ${end ? '끝 🔥' : '시작 💪'}</span></div>
-    ${!end && !w.end_photo ? '<span class="badge">운동 중…</span>' : ''}</article>`;
+    ${!end && !w.end_photo ? '<span class="badge">운동 중…</span>' : ''}
+    <button class="rp" data-reply="${w.id}:${end ? 1 : 0}" aria-label="이 사진에 답장">↩</button></article>`;
+}
+const photoOf = (w, end) => end ? w.end_photo : w.start_photo;
+
+// 단체방: 로그(카드) / 채팅 전환 (셋로그 방식)
+let feedMode = (() => { try { return localStorage.getItem('feedMode') || 'log'; } catch { return 'log'; } })();
+let replyTo = null; // {w, end}
+function feed() {
+  const seg = `<div class="seg"><button class="${feedMode === 'log' ? 'on' : ''}" data-mode="log">로그</button><button class="${feedMode === 'chat' ? 'on' : ''}" data-mode="chat">채팅</button></div>`;
+  feedMode === 'chat' ? chatView(seg) : logView(seg);
+  app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+    feedMode = b.dataset.mode; try { localStorage.setItem('feedMode', feedMode); } catch {}
+    feed();
+  });
+  app.querySelectorAll('[data-reply]').forEach(b => b.onclick = () => {
+    const [id, end] = b.dataset.reply.split(':');
+    replyTo = { w: workouts.find(w => w.id === +id), end: end === '1' };
+    feedMode = 'chat'; feed(); $('#chatIn')?.focus();
+  });
+}
+
+function chatView(seg) {
+  // 운동 사진(시작/끝)은 자동으로 채팅에 사진 메시지로 섞임
+  const ev = [
+    ...workouts.slice(0, 40).flatMap(w => [
+      { t: w.created_at, uid: w.user_id, w, end: false },
+      ...(w.end_photo ? [{ t: w.ended_at ?? w.created_at, uid: w.user_id, w, end: true }] : []),
+    ]),
+    ...chatMsgs.map(m => ({ t: m.created_at, uid: m.user_id, m })),
+  ].sort((a, b) => new Date(a.t) - new Date(b.t));
+  let lastDay = '', html = '<h1>단체방</h1>' + seg + '<div class="chat">';
+  for (const e of ev) {
+    const d = dayLabel(e.t);
+    if (d !== lastDay) { html += `<div class="day">${d}</div>`; lastDay = d; }
+    const mine = e.uid === me.id;
+    let inner;
+    if (e.w) {
+      inner = `<div class="ph"><img src="${esc(photoOf(e.w, e.end))}" loading="lazy" alt="${KIND[e.w.kind]} 사진"><span>${KIND[e.w.kind]} ${e.end ? '끝' : '시작'}</span>
+        <button class="rp" data-reply="${e.w.id}:${e.end ? 1 : 0}" aria-label="이 사진에 답장">↩</button></div>`;
+    } else {
+      const rw = e.m.workout_id && workouts.find(w => w.id === e.m.workout_id);
+      inner = `<div class="bub">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${KIND[rw.kind]} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${esc(e.m.body)}</div>`;
+    }
+    html += `<div class="msg ${mine ? 'mine' : ''}">${mine ? '' : ava(prof(e.uid), 'sm')}
+      <div>${mine ? '' : `<p class="who-s">${esc(nick(e.uid))}</p>`}${inner}</div><span class="time">${hhmm(e.t)}</span></div>`;
+  }
+  html += `</div><form class="chatbar" id="chatForm">
+    ${replyTo ? `<div class="replying"><img src="${esc(photoOf(replyTo.w, replyTo.end))}" alt="">${esc(nick(replyTo.w.user_id))} 사진에 답장<button type="button" class="x" id="noReply" aria-label="답장 취소">✕</button></div>` : ''}
+    <div class="row"><input id="chatIn" maxlength="300" placeholder="메시지" autocomplete="off" required><button aria-label="보내기">↑</button></div></form>`;
+  app.innerHTML = html;
+  window.scrollTo(0, document.body.scrollHeight);
+  $('#noReply') && ($('#noReply').onclick = () => { replyTo = null; feed(); });
+  $('#chatForm').onsubmit = e => {
+    e.preventDefault();
+    act(async () => {
+      const body = $('#chatIn').value.trim(); if (!body) return;
+      check(await sb.from('chat').insert({ body, workout_id: replyTo?.w.id ?? null, photo_end: replyTo ? replyTo.end : null }));
+      replyTo = null; await load(); feed(); $('#chatIn')?.focus();
+    })({ currentTarget: $('#chatForm button[aria-label="보내기"]') });
+  };
+}
+
+// 새 채팅/운동 사진 실시간 반영 (단체방 보고 있을 때만 다시 그림, 쓰던 글은 유지)
+function subscribeLive() {
+  sb.channel('live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chat' }, refreshLive)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'workouts' }, refreshLive)
+    .subscribe();
+}
+async function refreshLive() {
+  await load();
+  if (location.hash !== '#feed') return;
+  const draft = $('#chatIn')?.value, focused = document.activeElement?.id === 'chatIn';
+  feed();
+  if (draft && $('#chatIn')) $('#chatIn').value = draft;
+  if (focused) $('#chatIn')?.focus();
 }
 // 끝 카드 아래: 확인(👍) + 한마디
 function reactBox(w) {
@@ -383,13 +486,13 @@ function reactBox(w) {
     <form data-cmt="${w.id}"><input maxlength="60" placeholder="한마디 남기기" required><button>↑</button></form></div>`;
 }
 
-function feed() {
+function logView(seg) {
   // ponytail: 최근 30개 운동만, 무한 스크롤은 필요해지면
   const ev = workouts.slice(0, 30).flatMap(w => [
     { w, end: false, t: w.created_at },
     ...(w.end_photo ? [{ w, end: true, t: w.ended_at ?? w.created_at }] : []),
   ]).sort((a, b) => new Date(b.t) - new Date(a.t));
-  let lastDay = '', html = '<h1>단체방</h1>';
+  let lastDay = '', html = '<h1>단체방</h1>' + seg;
   for (const e of ev) {
     const d = dayLabel(e.t);
     if (d !== lastDay) { html += `<div class="day">${d}</div>`; lastDay = d; }
