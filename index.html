@@ -61,7 +61,9 @@ nav[hidden]{display:none}
 nav a{flex:1;text-align:center;padding:12px 0;color:var(--sub);text-decoration:none;font-size:13px;font-weight:700}
 nav a.on{color:var(--lav)}
 /* 공지 */
-.notice{background:var(--lav2);border-radius:16px;padding:10px 14px;margin:8px 0}
+.notice{position:relative;background:var(--lav2);border-radius:16px;padding:10px 40px 10px 14px;margin:8px 0}
+.notice .x{position:absolute;top:6px;right:6px;width:28px;height:28px;padding:0;border-radius:50%;background:transparent;color:var(--sub);box-shadow:none;font-size:14px}
+.notice .x:hover{background:#fff}
 .notice .body{font-size:16px;font-weight:700;margin:2px 0}
 .notice .to{color:#6d4fd1;font-weight:700}
 .pop{position:fixed;inset:0;background:rgba(45,40,51,.55);display:grid;place-items:center;padding:24px;z-index:20}
@@ -206,7 +208,7 @@ function popNotice() {
 function noticeSection() {
   return `<div class="card"><h2>😈</h2>
     ${notices.slice(0, 5).map(n => `<div class="notice"><span class="muted">${esc(nick(n.user_id))} → <span class="to">${n.target ? esc(nick(n.target)) : '전체'}</span> · ${hhmm(n.created_at)}</span>
-      <p class="body">${esc(n.body)}</p>${n.user_id === me.id ? `<button class="ghost small" data-del="${n.id}">지우기</button>` : ''}</div>`).join('') || '<p class="muted">이번 주 조용하네</p>'}
+      <p class="body">${esc(n.body)}</p>${n.user_id === me.id ? `<button class="x" data-del="${n.id}" aria-label="지우기">✕</button>` : ''}</div>`).join('') || '<p class="muted">이번 주 조용하네</p>'}
     ${canNotice ? `<form id="noticeForm" style="margin-top:10px">
         <select id="nTarget" aria-label="받는 사람"><option value="">전체</option>${profiles.filter(p => p.id !== me.id).map(p => `<option value="${p.id}">${esc(p.nickname)}</option>`).join('')}</select>
         <input id="nBody" maxlength="80" placeholder="예: 에몽가 돼지 공부좀 해라 ㅋㅋ" required>
