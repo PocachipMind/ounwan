@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { summarize, missing } from './rules.js';
+import { summarize, missing, totalMinutes, buddy } from './rules.js';
 
 assert.equal(missing(0, 3), 1);
 assert.equal(missing(2, 1), 0);
@@ -24,5 +24,15 @@ ws.push({ kind: 'strength', created_at: '2026-11-24T10:00:00' });
 assert.deepEqual(summarize(ws, joined, now), {
   misses: 0, couponsLeft: 1, week: { cardio: 0, strength: 1, left: 2 },
 });
+
+assert.equal(totalMinutes([
+  { created_at: '2026-11-24T10:00:00', ended_at: '2026-11-24T11:30:00' },
+  { created_at: '2026-11-24T10:00:00', ended_at: '2026-11-25T10:00:00' }, // 4시간으로 자름
+  { created_at: '2026-11-24T10:00:00' }, // 운동 중은 제외
+]), 90 + 240);
+
+const bw = (u, d) => ({ user_id: u, end_photo: 'x', created_at: `2026-11-${d}T10:00:00` });
+assert.deepEqual(buddy('me', [bw('me', 24), bw('me', 25), bw('a', 24), bw('b', 24), bw('b', 25), bw('b', 25)]), { id: 'b', days: 2 });
+assert.equal(buddy('me', [bw('me', 24), bw('a', 25)]), null);
 
 console.log('ok');

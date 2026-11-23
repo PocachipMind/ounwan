@@ -129,3 +129,34 @@ grant insert (target, body) on notices to authenticated;
 create policy "read" on notices for select to authenticated using (true);
 create policy "eligible insert" on notices for insert to authenticated with check (user_id = auth.uid() and can_notice());
 create policy "own delete" on notices for delete to authenticated using (user_id = auth.uid());
+
+-- 몸무게 기록 (그래프용)
+create table weights (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references profiles on delete cascade,
+  kg numeric not null check (kg between 20 and 300),
+  created_at timestamptz not null default now()
+);
+alter table weights enable row level security;
+revoke all on weights from authenticated, anon;
+grant select on weights to authenticated;
+grant insert (kg) on weights to authenticated;
+create policy "read" on weights for select to authenticated using (true);
+create policy "own insert" on weights for insert to authenticated with check (user_id = auth.uid());
+
+-- 콕 찌르기: 같은 사람한테 하루 1번
+create table pokes (
+  id bigint generated always as identity primary key,
+  from_id uuid not null default auth.uid() references profiles on delete cascade,
+  to_id uuid not null references profiles on delete cascade,
+  day date not null default (now() at time zone 'Asia/Seoul')::date,
+  created_at timestamptz not null default now(),
+  unique (from_id, to_id, day),
+  check (from_id <> to_id)
+);
+alter table pokes enable row level security;
+revoke all on pokes from authenticated, anon;
+grant select on pokes to authenticated;
+grant insert (to_id) on pokes to authenticated;
+create policy "read" on pokes for select to authenticated using (true);
+create policy "own insert" on pokes for insert to authenticated with check (from_id = auth.uid());

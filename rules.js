@@ -14,6 +14,23 @@ const quarter = d => `${d.getFullYear()}Q${Math.floor(d.getMonth() / 3)}`;
 // 근력 대신 유산소 더 한 건 인정, 유산소 대신 근력은 불인정
 export const missing = (cardio, strength) => Math.max(1 - cardio, 3 - cardio - strength, 0);
 
+// 끝낸 운동 총 시간(분). 끝 사진 늦게 올린 경우 대비 1회 최대 4시간
+export const totalMinutes = ws => Math.round(ws.filter(w => w.ended_at)
+  .reduce((a, w) => a + Math.min(new Date(w.ended_at) - new Date(w.created_at), 4 * 3600e3), 0) / 60000);
+
+// 같은 날 운동한 날이 가장 많은 친구 {id, days} 또는 null
+export function buddy(myId, ws) {
+  const days = id => new Set(ws.filter(w => w.user_id === id && w.end_photo).map(w => dayKey(new Date(w.created_at))));
+  const mine = days(myId);
+  let best = null;
+  for (const id of new Set(ws.map(w => w.user_id))) {
+    if (id === myId) continue;
+    const n = [...days(id)].filter(d => mine.has(d)).length;
+    if (n && (!best || n > best.days)) best = { id, days: n };
+  }
+  return best;
+}
+
 // workouts: 한 사람의 승인된 운동 [{kind:'cardio'|'strength', created_at}]
 export function summarize(workouts, joinedAt, now = new Date()) {
   const byWeek = {};
