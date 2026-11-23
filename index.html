@@ -206,7 +206,7 @@ function popNotice() {
 function noticeSection() {
   return `<div class="card"><h2>😈</h2>
     ${notices.slice(0, 5).map(n => `<div class="notice"><span class="muted">${esc(nick(n.user_id))} → <span class="to">${n.target ? esc(nick(n.target)) : '전체'}</span> · ${hhmm(n.created_at)}</span>
-      <p class="body">${esc(n.body)}</p></div>`).join('') || '<p class="muted">이번 주 조용하네</p>'}
+      <p class="body">${esc(n.body)}</p>${n.user_id === me.id ? `<button class="ghost small" data-del="${n.id}">지우기</button>` : ''}</div>`).join('') || '<p class="muted">이번 주 조용하네</p>'}
     ${canNotice ? `<form id="noticeForm" style="margin-top:10px">
         <select id="nTarget" aria-label="받는 사람"><option value="">전체</option>${profiles.filter(p => p.id !== me.id).map(p => `<option value="${p.id}">${esc(p.nickname)}</option>`).join('')}</select>
         <input id="nBody" maxlength="80" placeholder="예: 에몽가 돼지 공부좀 해라 ㅋㅋ" required>
@@ -214,6 +214,9 @@ function noticeSection() {
       : '<p class="muted">지난주 3회 채운 사람만 쓸 수 있어요. 억울하면 운동하기</p>'}</div>`;
 }
 function bindNotice(rerender) {
+  app.querySelectorAll('[data-del]').forEach(x => x.onclick = act(async () => {
+    check(await sb.from('notices').delete().eq('id', +x.dataset.del)); await load(); rerender(); toast('지웠어요');
+  }));
   const f = $('#noticeForm'); if (!f) return;
   f.onsubmit = e => {
     e.preventDefault();
