@@ -19,7 +19,7 @@ const store = {
 };
 
 let me, profiles = [], workouts = [], comments = [], notices = [], weights = [], pokes = [], chatMsgs = [],
-  rooms = [], members = [], wrs = [], proposals = [], votes = [], canNotice = false;
+  rooms = [], members = [], wrs = [], proposals = [], votes = [], reactions = [], canNotice = false;
 let roomId = +store.get('roomId') || null;
 
 function toast(t) {
@@ -91,8 +91,9 @@ async function load() {
     sb.from('workout_rooms').select('*'),
     sb.from('proposals').select('*').order('created_at', { ascending: false }),
     sb.from('votes').select('*'),
+    sb.from('reactions').select('*'),
   ]);
-  [profiles, workouts, comments, notices, weights, pokes, chatMsgs, rooms, members, wrs, proposals, votes] = res.map(check);
+  [profiles, workouts, comments, notices, weights, pokes, chatMsgs, rooms, members, wrs, proposals, votes, reactions] = res.map(check);
   chatMsgs.reverse();
   me = profiles.find(x => x.id === me.id) ?? { id: me.id };
   if (!room()) setRoom(rooms[0]?.id ?? null);
@@ -328,6 +329,25 @@ function go() {
 }
 
 // ---------- 단체방: 로그 / 채팅 ----------
+// 운동 사진 이모지 반응 (누르면 토글, 길게 누르면 누가 눌렀는지)
+const EMOJIS = ['🔥', '💪', '😂', '👍', '🤮'];
+function rxBar(w, end) {
+  const rs = reactions.filter(r => r.workout_id === w.id && r.photo_end === end);
+  return `<div class="rx">${EMOJIS.map(e => {
+    const who_ = rs.filter(r => r.emoji === e), mine = who_.some(r => r.user_id === me.id);
+    return `<button class="rxb ${mine ? 'on' : ''}" data-rx="${w.id}:${end ? 1 : 0}:${e}" title="${esc(who_.map(r => nick(r.user_id)).join(', '))}">${e}${who_.length ? ` <b>${who_.length}</b>` : ''}</button>`;
+  }).join('')}</div>`;
+}
+function bindRx() {
+  app.querySelectorAll('[data-rx]').forEach(b => b.onclick = act(async () => {
+    const [id, end, emoji] = b.dataset.rx.split(':');
+    const row = { workout_id: +id, photo_end: end === '1', emoji };
+    const mine = reactions.some(r => r.workout_id === row.workout_id && r.photo_end === row.photo_end && r.emoji === emoji && r.user_id === me.id);
+    check(mine ? await sb.from('reactions').delete().match({ ...row, user_id: me.id }) : await sb.from('reactions').insert(row));
+    const y = window.scrollY; await load(); feed(); window.scrollTo(0, y);
+  }));
+}
+
 // 시작/끝 사진 한 장 = 스냅 카드 한 장
 function snap(w, end) {
   const t = end ? (w.ended_at ?? w.created_at) : w.created_at;
@@ -345,6 +365,7 @@ function feed() {
   const seg = `<div class="seg"><button class="${feedMode === 'log' ? 'on' : ''}" data-mode="log">로그</button><button class="${feedMode === 'chat' ? 'on' : ''}" data-mode="chat">채팅</button></div>`;
   feedMode === 'chat' ? chatView(roomBar() + seg) : logView(roomBar() + seg);
   bindRoomBar(feed);
+  bindRx();
   app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { feedMode = b.dataset.mode; store.set('feedMode', feedMode); feed(); });
   app.querySelectorAll('[data-reply]').forEach(b => b.onclick = () => {
     const [id, end] = b.dataset.reply.split(':');
@@ -370,20 +391,28 @@ function chatView(top) {
     let inner;
     if (e.w) {
       inner = `<div class="ph"><img src="${esc(photoOf(e.w, e.end))}" loading="lazy" alt="${esc(e.w.kind)} 사진"><span>${esc(e.w.kind)} ${e.end ? '끝' : '시작'}</span>
-        <button class="rp" data-reply="${e.w.id}:${e.end ? 1 : 0}" aria-label="이 사진에 답장">↩</button></div>`;
+        <button class="rp" data-reply="${e.w.id}:${e.end ? 1 : 0}" aria-label="이 사진에 답장">↩</button></div>${rxBar(e.w, e.end)}`;
     } else {
       const rw = e.m.workout_id && workouts.find(w => w.id === e.m.workout_id);
-      inner = `<div class="bub">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${esc(rw.kind)} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${esc(e.m.body)}</div>`;
+      inner = `<div class="bub">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${esc(rw.kind)} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${e.m.body ? esc(e.m.body) : ''}${e.m.photo ? `<img class="cimg" src="${esc(e.m.photo)}" loading="lazy" alt="보낸 사진">` : ''}</div>`;
     }
     html += `<div class="msg ${mine ? 'mine' : ''}">${mine ? '' : ava(prof(e.uid), 'sm')}
       <div>${mine ? '' : `<p class="who-s">${esc(nick(e.uid))}</p>`}${inner}</div><span class="time">${hhmm(e.t)}</span></div>`;
   }
   html += `</div><form class="chatbar" id="chatForm">
     ${replyTo ? `<div class="replying"><img src="${esc(photoOf(replyTo.w, replyTo.end))}" alt="">${esc(nick(replyTo.w.user_id))} 사진에 답장<button type="button" class="x" id="noReply" aria-label="답장 취소">✕</button></div>` : ''}
-    <div class="row"><input id="chatIn" maxlength="300" placeholder="메시지" autocomplete="off" required><button aria-label="보내기">↑</button></div></form>`;
+    <div class="row"><button type="button" class="ghost pic" id="chatPic" aria-label="사진 보내기">📷</button><input id="chatIn" maxlength="300" placeholder="메시지" autocomplete="off" required><button aria-label="보내기">↑</button></div></form>`;
   app.innerHTML = html;
   window.scrollTo(0, document.body.scrollHeight);
   $('#noReply') && ($('#noReply').onclick = () => { replyTo = null; feed(); });
+  // 사진 보내기 (앨범/카메라). 입력창에 쓴 글이 있으면 같이 보냄
+  $('#chatPic').onclick = act(async () => {
+    const f = await pickPhoto(false); if (!f) return;
+    toast('올리는 중…');
+    const body = $('#chatIn').value.trim() || null;
+    check(await sb.from('chat').insert({ room_id: roomId, body, photo: await upload(f), workout_id: replyTo?.w.id ?? null, photo_end: replyTo ? replyTo.end : null }));
+    replyTo = null; await load(); feed();
+  });
   onSubmit($('#chatForm'), async () => {
     const body = $('#chatIn').value.trim(); if (!body) return;
     check(await sb.from('chat').insert({ room_id: roomId, body, workout_id: replyTo?.w.id ?? null, photo_end: replyTo ? replyTo.end : null }));
@@ -396,6 +425,7 @@ function subscribeLive() {
   sb.channel('live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'chat' }, refreshLive)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'workouts' }, refreshLive)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reactions' }, refreshLive)
     .subscribe();
 }
 async function refreshLive() {
@@ -429,7 +459,7 @@ function logView(top) {
     const d = dayLabel(e.t);
     if (d !== lastDay) { html += `<div class="day">${d}</div>`; lastDay = d; }
     // 끝 카드 밑에 반응, 아직 운동 중이면 시작 카드 밑에
-    html += snap(e.w, e.end) + (e.end || !e.w.end_photo ? reactBox(e.w) : '<div style="height:22px"></div>');
+    html += snap(e.w, e.end) + rxBar(e.w, e.end) + (e.end || !e.w.end_photo ? reactBox(e.w) : '<div style="height:10px"></div>');
   }
   app.innerHTML = ev.length ? html : html + '<p class="muted">아직 인증이 없어요. 첫 오운완 올려봐요!</p>';
   app.querySelectorAll('[data-ok]').forEach(b => b.onclick = act(async () => {
