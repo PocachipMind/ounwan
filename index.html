@@ -84,6 +84,14 @@ nav[hidden]{display:none}
 nav a{flex:0 1 115px;text-align:center;padding:15px 0 13px;color:var(--sub);text-decoration:none;font-size:13px;font-weight:600;border-top:2px solid transparent;margin-top:-1px;transition:color .2s}
 nav a.on{color:var(--ink);border-top-color:var(--ink)}
 #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:8px;font-size:14px;display:none;max-width:90%;z-index:10}
+/* 공지 */
+.notice{border-left:3px solid var(--accent);padding:2px 0 2px 12px;margin:10px 0}
+.notice b{font-weight:700}.notice .to{color:var(--accent);font-weight:700}
+.notice .body{font-size:16px;font-weight:600;margin:2px 0}
+.composer{display:grid;grid-template-columns:1fr;gap:0;margin-top:12px}
+.pop{position:fixed;inset:0;background:rgba(28,27,25,.72);display:grid;place-items:center;padding:24px;z-index:20}
+.pop div{background:var(--paper);border-radius:14px;padding:26px 22px 18px;max-width:380px;width:100%;border-top:6px solid var(--accent);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.pop .body{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1.3;margin:8px 0 18px;word-break:keep-all}
 .login{min-height:80dvh;display:flex;flex-direction:column;justify-content:center}
 .login h1{font-size:40px;margin:0}
 </style>
@@ -110,7 +118,7 @@ const won = n => n.toLocaleString('ko-KR') + '원';
 const KIND = { cardio: '유산소', strength: '근력' };
 const hhmm = d => new Date(d).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 const dayLabel = d => new Date(d).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit', weekday: 'short' });
-let me, profiles = [], workouts = [], comments = [], fine = 10000;
+let me, profiles = [], workouts = [], comments = [], notices = [], canNotice = false, fine = 10000;
 
 function toast(t) {
   const el = $('#toast'); el.textContent = t; el.style.display = 'block';
@@ -149,13 +157,17 @@ const pickPhoto = (camera = true) => new Promise(res => {
 });
 
 async function load() {
-  const [p, w, c, s] = await Promise.all([
+  const week = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [p, w, c, s, n, cn] = await Promise.all([
     sb.from('profiles').select('*'),
     sb.from('workouts').select('*').order('created_at', { ascending: false }),
     sb.from('comments').select('*').order('created_at'),
     sb.from('settings').select('fine').single(),
+    sb.from('notices').select('*').gte('created_at', week).order('created_at', { ascending: false }),
+    sb.rpc('can_notice'),
   ]);
   profiles = check(p); workouts = check(w); comments = check(c); fine = check(s).fine;
+  notices = check(n); canNotice = check(cn);
   me = profiles.find(x => x.id === me.id) ?? { id: me.id };
 }
 const statsOf = p => summarize(workouts.filter(w => w.user_id === p.id && w.approved_by), p.created_at);
@@ -168,6 +180,43 @@ async function boot() {
   if (!me.nickname) return nicknameView();
   $('#nav').hidden = false;
   route();
+  popNotice();
+}
+
+// 나한테 온(또는 전체) 안 본 공지 중 최신 1개를 화면 가득 띄움
+function popNotice() {
+  let seen = 0;
+  try { seen = +localStorage.getItem('seenNotice') || 0; } catch {}
+  const n = notices.find(n => n.id > seen && n.user_id !== me.id && (!n.target || n.target === me.id));
+  if (!n) return;
+  const el = document.createElement('div');
+  el.className = 'pop';
+  el.innerHTML = `<div role="dialog" aria-label="공지"><p class="label">${esc(nick(n.user_id))}${prof(n.user_id)?.is_admin ? ' (관리자)' : ''} → ${n.target ? '너' : '전체'}</p>
+    <p class="body">${esc(n.body)}</p><button>알겠음</button></div>`;
+  el.querySelector('button').onclick = () => { try { localStorage.setItem('seenNotice', notices[0].id); } catch {} el.remove(); };
+  document.body.append(el);
+}
+
+function noticeSection() {
+  const recent = notices.slice(0, 5);
+  return `<section><p class="label">공지</p>
+    ${recent.map(n => `<div class="notice"><span class="muted">${esc(nick(n.user_id))} → <span class="to">${n.target ? esc(nick(n.target)) : '전체'}</span> · <span class="num">${hhmm(n.created_at)}</span></span>
+      <p class="body">${esc(n.body)}</p></div>`).join('') || '<p class="muted">이번 주 공지 없음</p>'}
+    ${canNotice ? `<form class="composer" id="noticeForm">
+        <select id="nTarget" aria-label="받는 사람"><option value="">전체</option>${profiles.filter(p => p.id !== me.id).map(p => `<option value="${p.id}">${esc(p.nickname)}</option>`).join('')}</select>
+        <input id="nBody" maxlength="80" placeholder="예: 에몽가 돼지 공부좀 해라 ㅋㅋ" required>
+        <button class="line">공지 띄우기</button></form>`
+      : '<p class="muted">지난주 3회 채운 사람만 공지 쓸 수 있음.</p>'}</section>`;
+}
+function bindNotice(rerender) {
+  const f = $('#noticeForm'); if (!f) return;
+  f.onsubmit = e => {
+    e.preventDefault();
+    act(async () => {
+      check(await sb.from('notices').insert({ target: $('#nTarget').value || null, body: $('#nBody').value.trim() }));
+      await load(); rerender(); toast('띄움');
+    })({ currentTarget: f.querySelector('button') });
+  };
 }
 
 function loginView() {
@@ -239,7 +288,9 @@ function home() {
       <div><dt>남은 쿠폰 (이번 분기)</dt><dd>${s.couponsLeft} / 3</dd></div>
       <div><dt>내 벌금</dt><dd class="${s.misses ? 'warn' : ''}">${won(s.misses * fine)}</dd></div>
       <div><dt>내가 확인해줄 인증</dt><dd>${toApprove}건</dd></div></dl>
-      ${toApprove ? `<button class="line" style="margin-top:12px" onclick="location.hash='feed'">단체방에서 확인하기</button>` : ''}</section>`;
+      ${toApprove ? `<button class="line" style="margin-top:12px" onclick="location.hash='feed'">단체방에서 확인하기</button>` : ''}</section>
+    ${noticeSection()}`;
+  bindNotice(home);
   if (ongoing) {
     $('#finish').onclick = act(async () => {
       const f = await pickPhoto(); if (!f) return;

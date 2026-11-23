@@ -100,3 +100,32 @@ create policy "own upload" on storage.objects for insert to authenticated
 
 -- 가입 후 관리자 지정 (닉네임 바꿔서 실행):
 -- update profiles set is_admin = true where nickname = '성규';
+
+-- 공지(놀리기): 관리자 또는 지난주 3회(유산소1 포함, 확인된 것) 채운 사람만
+create function can_notice() returns boolean
+language sql stable security definer set search_path = public as $fn$
+  select coalesce((select is_admin from profiles where id = auth.uid()), false) or exists (
+    select 1 from (
+      select count(*) filter (where kind = 'cardio') c, count(*) n from workouts
+      where user_id = auth.uid() and approved_by is not null
+        and created_at >= (date_trunc('week', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul') - interval '7 days'
+        and created_at <  (date_trunc('week', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul')
+    ) x where c >= 1 and n >= 3);
+$fn$;
+revoke execute on function can_notice from public, anon;
+grant execute on function can_notice to authenticated;
+
+create table notices (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references profiles on delete cascade,
+  target uuid references profiles on delete cascade,
+  body text not null check (char_length(body) between 1 and 80),
+  created_at timestamptz not null default now()
+);
+alter table notices enable row level security;
+revoke all on notices from authenticated, anon;
+grant select, delete on notices to authenticated;
+grant insert (target, body) on notices to authenticated;
+create policy "read" on notices for select to authenticated using (true);
+create policy "eligible insert" on notices for insert to authenticated with check (user_id = auth.uid() and can_notice());
+create policy "own delete" on notices for delete to authenticated using (user_id = auth.uid());
