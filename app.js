@@ -180,21 +180,38 @@ function bindNotice(rerender) {
 }
 
 // ---------- 로그인 ----------
+// 영문 이메일이면 그대로, 아니면(한글 아이디 등) 고정된 내부 이메일로 바꿈. 같은 아이디 → 항상 같은 값
+async function toEmail(id) {
+  id = id.trim();
+  if (/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(id)) return id.toLowerCase();
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(id.normalize('NFC')));
+  return 'u' + [...new Uint8Array(h)].slice(0, 20).map(b => b.toString(16).padStart(2, '0')).join('') + '@ounwan.invalid';
+}
 function loginView() {
   $('#nav').hidden = true;
   if (location.hash.startsWith('#join/')) store.set('joinCode', location.hash.slice(6));
   app.innerHTML = `<h1 style="text-align:center;font-size:44px;margin-top:40px">오운완 💪</h1>
     <p class="muted" style="text-align:center;margin-top:-8px">${store.get('joinCode') ? '초대받았어요. 로그인하거나 가입하면 바로 방에 들어가요' : '주 3회, 같이 운동하자'}</p>
     <form class="card" id="loginForm">
-    <input id="email" type="email" placeholder="이메일" autocomplete="email" required>
+    <input id="email" type="text" placeholder="아이디 또는 이메일 (한글 가능)" autocomplete="username" autocapitalize="off" required>
     <input id="pw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" required>
     <button id="login">로그인</button><p></p>
     <button type="button" class="ghost" id="signup">회원가입</button>
     <p class="muted" style="text-align:center">비밀번호를 잊었으면 관리자에게 말해주세요. 임시 비밀번호로 바꿔줘요.</p></form>`;
-  const cred = () => ({ email: $('#email').value.trim(), password: $('#pw').value });
-  onSubmit($('#loginForm'), async () => { check(await sb.auth.signInWithPassword(cred())); await boot(); });
+  const cred = async () => {
+    const pw = $('#pw').value;
+    if (pw.length < 6) throw new Error('비밀번호는 6자 이상');
+    return { email: await toEmail($('#email').value), password: pw };
+  };
+  onSubmit($('#loginForm'), async () => {
+    const r = await sb.auth.signInWithPassword(await cred());
+    if (r.error?.message === 'Invalid login credentials') throw new Error('아이디나 비밀번호가 틀렸어요');
+    check(r); await boot();
+  });
   $('#signup').onclick = act(async () => {
-    const r = check(await sb.auth.signUp(cred()));
+    const res = await sb.auth.signUp(await cred());
+    if (res.error?.code === 'user_already_exists') throw new Error('이미 있는 아이디예요');
+    const r = check(res);
     if (!r.session) throw new Error('Supabase에서 이메일 인증(Confirm email)을 꺼주세요');
     await boot();
   });
