@@ -118,13 +118,15 @@ async function boot() {
 
 function loginView() {
   $('#nav').hidden = true;
-  app.innerHTML = `<h1>오운완 💪</h1><div class="card">
-    <input id="email" type="email" placeholder="이메일" autocomplete="email">
-    <input id="pw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+  app.innerHTML = `<h1>오운완 💪</h1><form class="card" id="loginForm">
+    <input id="email" type="email" placeholder="이메일" autocomplete="email" required>
+    <input id="pw" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" required>
     <button id="login">로그인</button><p></p>
-    <button class="ghost" id="signup">회원가입</button></div>`;
+    <button type="button" class="ghost" id="signup">회원가입</button>
+    <p class="muted" style="text-align:center">비밀번호를 잊었으면 관리자에게 말해주세요. 임시 비밀번호로 바꿔줘요.</p></form>`;
   const cred = () => ({ email: $('#email').value.trim(), password: $('#pw').value });
-  $('#login').onclick = act(async () => { check(await sb.auth.signInWithPassword(cred())); await boot(); });
+  const login = act(async () => { check(await sb.auth.signInWithPassword(cred())); await boot(); });
+  $('#loginForm').onsubmit = e => { e.preventDefault(); login({ currentTarget: $('#login') }); };
   $('#signup').onclick = act(async () => {
     const r = check(await sb.auth.signUp(cred()));
     if (!r.session) throw new Error('Supabase에서 이메일 인증(Confirm email)을 꺼주세요');
@@ -215,11 +217,21 @@ function members() {
       <span class="${s.week.left ? '' : 'ok'}">${s.week.left ? `이번 주 ${s.week.left}회 남음` : '이번 주 완료'}</span></div>
       <p class="muted">유산소 ${s.week.cardio}/1 · 근력 ${s.week.strength}/2 · 쿠폰 ${s.couponsLeft}/3 · 벌금 <span class="${s.misses ? 'warn' : ''}">${won(s.misses * fine)}</span>
       ${p.current_weight ? ` · ${p.current_weight}kg${p.target_weight ? ` → ${p.target_weight}kg` : ''}` : ''}</p></div>`).join('')}
-    ${me.is_admin ? `<div class="card"><h2>관리자: 벌금 금액</h2><input id="fine" type="number" step="1000" value="${fine}"><button id="saveFine">저장</button></div>` : ''}`;
-  if (me.is_admin) $('#saveFine').onclick = act(async () => {
-    check(await sb.from('settings').update({ fine: +$('#fine').value }).eq('id', 1));
-    await load(); members(); toast('저장됨');
-  });
+    ${me.is_admin ? `<div class="card"><h2>관리자: 벌금 금액</h2><input id="fine" type="number" step="1000" value="${fine}"><button id="saveFine">저장</button></div>
+    <div class="card"><h2>관리자: 비밀번호 초기화</h2>
+      <select id="resetWho">${profiles.map(p => `<option value="${p.id}">${esc(p.nickname)}</option>`).join('')}</select>
+      <input id="resetPw" placeholder="임시 비밀번호 (6자 이상)" autocomplete="off">
+      <button id="resetBtn">초기화</button></div>` : ''}`;
+  if (me.is_admin) {
+    $('#saveFine').onclick = act(async () => {
+      check(await sb.from('settings').update({ fine: +$('#fine').value }).eq('id', 1));
+      await load(); members(); toast('저장됨');
+    });
+    $('#resetBtn').onclick = act(async () => {
+      check(await sb.rpc('admin_reset_password', { uid: $('#resetWho').value, pw: $('#resetPw').value }));
+      $('#resetPw').value = ''; toast('바꿨어요. 임시 비밀번호 알려주세요');
+    });
+  }
 }
 
 function mePage() {
@@ -233,7 +245,14 @@ function mePage() {
     ${me.weight_photo ? `<img src="${esc(me.weight_photo)}" style="width:100%;border-radius:10px;margin-bottom:10px">` : ''}
     <button class="ghost" id="wphoto">체중계 사진 찍기</button><p></p>
     <button id="save">저장</button></div>
+    <div class="card"><h2>비밀번호 변경</h2>
+      <input id="newPw" type="password" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
+      <button class="ghost" id="changePw">변경</button></div>
     <button class="ghost" id="logout">로그아웃</button>`;
+  $('#changePw').onclick = act(async () => {
+    check(await sb.auth.updateUser({ password: $('#newPw').value }));
+    $('#newPw').value = ''; toast('비밀번호 바뀜');
+  });
   const num = v => v === '' ? null : +v;
   $('#avatar').onclick = act(async () => {
     const f = await pickPhoto(false); if (!f) return;

@@ -63,6 +63,19 @@ $$;
 revoke execute on function approve from public, anon;
 grant execute on function approve to authenticated;
 
+-- 관리자 비밀번호 초기화 (메일 발송 없이)
+create function admin_reset_password(uid uuid, pw text) returns void
+language plpgsql security definer set search_path = public, extensions as $fn$
+begin
+  if not coalesce((select is_admin from profiles where id = auth.uid()), false) then
+    raise exception '관리자만 가능';
+  end if;
+  if length(pw) < 6 then raise exception '비밀번호는 6자 이상'; end if;
+  update auth.users set encrypted_password = crypt(pw, gen_salt('bf')) where id = uid;
+end $fn$;
+revoke execute on function admin_reset_password from public, anon;
+grant execute on function admin_reset_password to authenticated;
+
 -- 사진 저장소 (공개 URL, 본인 폴더에만 업로드)
 insert into storage.buckets (id, name, public) values ('photos', 'photos', true);
 create policy "own upload" on storage.objects for insert to authenticated
