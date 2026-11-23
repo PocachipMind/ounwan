@@ -127,6 +127,7 @@ const pickPhoto = (camera = true) => new Promise(res => {
   const i = Object.assign(document.createElement('input'), { type: 'file', accept: 'image/*' });
   if (camera) i.setAttribute('capture', 'environment');
   i.onchange = () => res(i.files[0]);
+  i.oncancel = () => res(); // 선택창 취소 시 버튼 잠김 방지
   i.click();
 });
 
