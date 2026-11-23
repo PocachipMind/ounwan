@@ -19,7 +19,7 @@ const store = {
 };
 
 let me, profiles = [], workouts = [], comments = [], notices = [], weights = [], pokes = [], chatMsgs = [],
-  rooms = [], members = [], wrs = [], proposals = [], votes = [], reactions = [], canNotice = false;
+  rooms = [], members = [], wrs = [], proposals = [], votes = [], reactions = [], chatRx = [], canNotice = false;
 let roomId = +store.get('roomId') || null;
 
 function toast(t) {
@@ -92,8 +92,9 @@ async function load() {
     sb.from('proposals').select('*').order('created_at', { ascending: false }),
     sb.from('votes').select('*'),
     sb.from('reactions').select('*'),
+    sb.from('chat_reactions').select('*'),
   ]);
-  [profiles, workouts, comments, notices, weights, pokes, chatMsgs, rooms, members, wrs, proposals, votes, reactions] = res.map(check);
+  [profiles, workouts, comments, notices, weights, pokes, chatMsgs, rooms, members, wrs, proposals, votes, reactions, chatRx] = res.map(check);
   chatMsgs.reverse();
   me = profiles.find(x => x.id === me.id) ?? { id: me.id };
   if (!room()) setRoom(rooms[0]?.id ?? null);
@@ -331,10 +332,15 @@ function go() {
 // ---------- 단체방: 로그 / 채팅 ----------
 // 운동 사진 이모지 반응 (누르면 토글, 길게 누르면 누가 눌렀는지)
 const EMOJIS = ['🔥', '💪', '😂', '👍', '🤮'];
-// 달린 반응만 보이고, + 누르면 5개 중에서 골라 추가
-function rxBar(w, end) {
-  const rs = reactions.filter(r => r.workout_id === w.id && r.photo_end === end);
-  const key = `${w.id}:${end ? 1 : 0}`;
+// 달린 반응만 보이고, + 누르면 5개 중에서 골라 추가. key: 'w:<운동id>:<0|1>' 또는 'c:<채팅id>'
+const rxRows = key => {
+  const [t, id, end] = key.split(':');
+  return t === 'w' ? reactions.filter(r => r.workout_id === +id && r.photo_end === (end === '1'))
+    : chatRx.filter(r => r.chat_id === +id);
+};
+const rxBar = (w, end) => rxHtml(`w:${w.id}:${end ? 1 : 0}`);
+function rxHtml(key) {
+  const rs = rxRows(key);
   return `<div class="rx">${EMOJIS.filter(e => rs.some(r => r.emoji === e)).map(e => {
     const who_ = rs.filter(r => r.emoji === e), mine = who_.some(r => r.user_id === me.id);
     return `<button class="rxb ${mine ? 'on' : ''}" data-rx="${key}:${e}" title="${esc(who_.map(r => nick(r.user_id)).join(', '))}">${e} <b>${who_.length}</b></button>`;
@@ -344,10 +350,11 @@ function rxBar(w, end) {
 function bindRx() {
   app.querySelectorAll('[data-rxadd]').forEach(b => b.onclick = () => { const p = b.nextElementSibling; p.hidden = !p.hidden; });
   app.querySelectorAll('[data-rx]').forEach(b => b.onclick = act(async () => {
-    const [id, end, emoji] = b.dataset.rx.split(':');
-    const row = { workout_id: +id, photo_end: end === '1', emoji };
-    const mine = reactions.some(r => r.workout_id === row.workout_id && r.photo_end === row.photo_end && r.emoji === emoji && r.user_id === me.id);
-    check(mine ? await sb.from('reactions').delete().match({ ...row, user_id: me.id }) : await sb.from('reactions').insert(row));
+    const parts = b.dataset.rx.split(':'), emoji = parts.pop(), key = parts.join(':');
+    const [t, id, end] = parts;
+    const [table, row] = t === 'w' ? ['reactions', { workout_id: +id, photo_end: end === '1', emoji }] : ['chat_reactions', { chat_id: +id, emoji }];
+    const mine = rxRows(key).some(r => r.emoji === emoji && r.user_id === me.id);
+    check(mine ? await sb.from(table).delete().match({ ...row, user_id: me.id }) : await sb.from(table).insert(row));
     const y = window.scrollY; await load(); feed(); window.scrollTo(0, y);
   }));
 }
@@ -398,7 +405,7 @@ function chatView(top) {
         <button class="rp" data-reply="${e.w.id}:${e.end ? 1 : 0}" aria-label="이 사진에 답장">↩</button></div>${rxBar(e.w, e.end)}`;
     } else {
       const rw = e.m.workout_id && workouts.find(w => w.id === e.m.workout_id);
-      inner = `<div class="bub">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${esc(rw.kind)} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${e.m.body ? esc(e.m.body) : ''}${e.m.photo ? `<img class="cimg" src="${esc(e.m.photo)}" loading="lazy" alt="보낸 사진">` : ''}</div>`;
+      inner = `<div class="bub">${rw ? `<div class="quote"><img src="${esc(photoOf(rw, e.m.photo_end))}" alt=""><span>${esc(nick(rw.user_id))} ${esc(rw.kind)} ${e.m.photo_end ? '끝' : '시작'}</span></div>` : ''}${e.m.body ? esc(e.m.body) : ''}${e.m.photo ? `<img class="cimg" src="${esc(e.m.photo)}" loading="lazy" alt="보낸 사진">` : ''}</div>${rxHtml(`c:${e.m.id}`)}`;
     }
     html += `<div class="msg ${mine ? 'mine' : ''}">${mine ? '' : ava(prof(e.uid), 'sm')}
       <div>${mine ? '' : `<p class="who-s">${esc(nick(e.uid))}</p>`}${inner}</div><span class="time">${hhmm(e.t)}</span></div>`;
@@ -430,6 +437,7 @@ function subscribeLive() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'chat' }, refreshLive)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'workouts' }, refreshLive)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reactions' }, refreshLive)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_reactions' }, refreshLive)
     .subscribe();
 }
 async function refreshLive() {
