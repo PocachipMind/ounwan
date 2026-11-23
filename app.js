@@ -331,14 +331,18 @@ function go() {
 // ---------- 단체방: 로그 / 채팅 ----------
 // 운동 사진 이모지 반응 (누르면 토글, 길게 누르면 누가 눌렀는지)
 const EMOJIS = ['🔥', '💪', '😂', '👍', '🤮'];
+// 달린 반응만 보이고, + 누르면 5개 중에서 골라 추가
 function rxBar(w, end) {
   const rs = reactions.filter(r => r.workout_id === w.id && r.photo_end === end);
-  return `<div class="rx">${EMOJIS.map(e => {
+  const key = `${w.id}:${end ? 1 : 0}`;
+  return `<div class="rx">${EMOJIS.filter(e => rs.some(r => r.emoji === e)).map(e => {
     const who_ = rs.filter(r => r.emoji === e), mine = who_.some(r => r.user_id === me.id);
-    return `<button class="rxb ${mine ? 'on' : ''}" data-rx="${w.id}:${end ? 1 : 0}:${e}" title="${esc(who_.map(r => nick(r.user_id)).join(', '))}">${e}${who_.length ? ` <b>${who_.length}</b>` : ''}</button>`;
-  }).join('')}</div>`;
+    return `<button class="rxb ${mine ? 'on' : ''}" data-rx="${key}:${e}" title="${esc(who_.map(r => nick(r.user_id)).join(', '))}">${e} <b>${who_.length}</b></button>`;
+  }).join('')}<button class="rxb add" data-rxadd aria-label="반응 추가">😀+</button>
+    <span class="rxpick" hidden>${EMOJIS.map(e => `<button class="rxb" data-rx="${key}:${e}">${e}</button>`).join('')}</span></div>`;
 }
 function bindRx() {
+  app.querySelectorAll('[data-rxadd]').forEach(b => b.onclick = () => { const p = b.nextElementSibling; p.hidden = !p.hidden; });
   app.querySelectorAll('[data-rx]').forEach(b => b.onclick = act(async () => {
     const [id, end, emoji] = b.dataset.rx.split(':');
     const row = { workout_id: +id, photo_end: end === '1', emoji };
