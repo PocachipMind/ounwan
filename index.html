@@ -56,7 +56,7 @@ label{display:block;font-size:13px;color:var(--sub);margin-bottom:4px}
 .pics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
 .pics img,.pics div{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;background:var(--lav2)}
 .pics div{display:grid;place-items:center;color:var(--sub);font-size:13px}
-nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:min(448px,calc(100% - 32px));display:flex;background:var(--card);border:2px solid var(--line);border-radius:22px;box-shadow:0 6px 20px rgba(80,60,40,.12);margin-bottom:env(safe-area-inset-bottom)}
+nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:min(448px,calc(100% - 32px));display:flex;background:var(--card);border:2px solid var(--line);border-radius:22px;box-shadow:0 6px 20px rgba(80,60,40,.12);margin-bottom:env(safe-area-inset-bottom);z-index:8}
 nav[hidden]{display:none}
 nav a{flex:1;text-align:center;padding:12px 0;color:var(--sub);text-decoration:none;font-size:13px;font-weight:700}
 nav a.on{color:var(--lav)}
