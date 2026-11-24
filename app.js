@@ -82,7 +82,7 @@ function setRoom(id) { roomId = id; store.set('roomId', id); }
 async function load() {
   const since = d => new Date(Date.now() - d * 864e5).toISOString();
   const res = await Promise.all([
-    sb.from('profiles').select('*'),
+    sb.from('profiles').select('id, nickname, avatar, is_admin, created_at, weight_public'),
     sb.from('workouts').select('*').order('created_at', { ascending: false }),
     sb.from('comments').select('*').order('created_at'),
     sb.from('notices').select('*').gte('created_at', since(7)).order('created_at', { ascending: false }),
@@ -96,8 +96,11 @@ async function load() {
     sb.from('votes').select('*'),
     sb.from('reactions').select('*'),
     sb.from('chat_reactions').select('*'),
+    sb.rpc('weight_info'), // 몸무게는 공개한 사람 것만 (본인 건 항상)
   ]);
-  [profiles, workouts, comments, notices, weights, pokes, chatMsgs, rooms, members, wrs, proposals, votes, reactions, chatRx] = res.map(check);
+  let wi;
+  [profiles, workouts, comments, notices, weights, pokes, chatMsgs, rooms, members, wrs, proposals, votes, reactions, chatRx, wi] = res.map(check);
+  for (const x of wi) Object.assign(prof(x.id) ?? {}, x);
   chatMsgs.reverse();
   me = profiles.find(x => x.id === me.id) ?? { id: me.id };
   if (!room()) setRoom(rooms[0]?.id ?? null);
@@ -560,10 +563,10 @@ function profile(id) {
   if (!p) return home();
   const s = statsOf(id);
   const done = roomWs().filter(w => w.user_id === id && w.end_photo);
-  const showW = id === me.id || r.show_weight;
+  const showW = id === me.id || (r.show_weight && p.weight_public);
   app.innerHTML = `<div class="card" style="text-align:center">${ava(p, 'lg')}
       <h1 style="margin:8px 0 4px">${esc(p.nickname)}</h1>
-      <p class="muted">${!showW ? '이 방은 몸무게 비공개' : p.current_weight ? `${p.current_weight}kg${p.target_weight ? ` → 목표 ${p.target_weight}kg` : ''}` : '체중 미입력'}</p>
+      <p class="muted">${!showW ? '몸무게 비공개' : p.current_weight ? `${p.current_weight}kg${p.target_weight ? ` → 목표 ${p.target_weight}kg` : ''}` : '체중 미입력'}</p>
       ${isOp(id) ? '<p><span class="tag">운영자</span></p>' : `<div class="grid3" style="margin-top:12px">
         <div><b>${s.week.left ? s.week.left + '회' : '완료'}</b><span class="muted">이번 주 남음</span></div>
         <div><b>${done.length}</b><span class="muted">이 방 인증</span></div>
@@ -684,6 +687,8 @@ function mePage() {
     <label>닉네임</label><input id="nick" value="${esc(me.nickname)}" maxlength="12">
     <label>목표 체중 (kg)</label><input id="tw" type="number" step="0.1" value="${me.target_weight ?? ''}">
     <label>현재 체중 (kg)</label><input id="cw" type="number" step="0.1" value="${me.current_weight ?? ''}">
+    <label class="chk"><input id="wpub" type="checkbox" ${me.weight_public !== false ? 'checked' : ''}> 내 몸무게·목표 다른 사람한테 보이기</label>
+    <p class="muted" style="margin:0 0 10px">끄면 나만 볼 수 있어요 (그래프 포함)</p>
     <label>체중계 사진</label>
     ${me.weight_photo ? `<img src="${esc(me.weight_photo)}" style="width:100%;border-radius:14px;margin-bottom:10px">` : ''}
     <button class="ghost" id="wphoto">체중계 사진 찍기</button><p></p>
@@ -708,7 +713,7 @@ function mePage() {
   });
   $('#save').onclick = act(async () => {
     const cw = num($('#cw').value);
-    check(await sb.from('profiles').update({ nickname: $('#nick').value.trim() || me.nickname, target_weight: num($('#tw').value), current_weight: cw }).eq('id', me.id));
+    check(await sb.from('profiles').update({ nickname: $('#nick').value.trim() || me.nickname, target_weight: num($('#tw').value), current_weight: cw, weight_public: $('#wpub').checked }).eq('id', me.id));
     // 몸무게 바뀌면 그래프용 기록 추가
     if (cw && cw !== +me.current_weight) check(await sb.from('weights').insert({ kg: cw }));
     await load(); toast('저장됨');
